@@ -1,7 +1,8 @@
 # ERC7702 demo
 
 ## Feature
--[ ] xxx
+- [x] write code and execute code for EOA account
+- [ ] prepareAuthorization and signAuthorization
 
 ## Setup
 
