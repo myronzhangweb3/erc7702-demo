@@ -1,19 +1,7 @@
-参考：https://viem.sh/experimental/eip7702
+# ERC7702 demo
 
-```bash
-npx hardhat ignition deploy ignition/modules/BatchCallDelegation.ts --network sepolia_1
-```
-
-set contract to `BATCH_CALL_DELEGATION_CONTRACT_ADDRESS` in .evn file
-
-```bash
-npm run send-tx
-```
-result:
-contract writes hash: 0x9e7ff257c22532222a05f8df529275498455cecead2b875aeb92c8fe2b502217
-send tx hash: 0xed2e25a921695148d185e9a0bffb27c3cbd2be88b7e67f8e60b6feee8f13bc4e
-
-
+## Feature
+-[ ] xxx
 
 ## Setup
 
