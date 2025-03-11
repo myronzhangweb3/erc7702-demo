@@ -20,8 +20,8 @@ send tx hash: 0xed2e25a921695148d185e9a0bffb27c3cbd2be88b7e67f8e60b6feee8f13bc4e
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/your-repo-name.git
-   cd your-repo-name
+   git clone https://github.com/myronzhangweb3/erc7702-demo.git
+   cd erc7702-demo
    ```
 
 2. **Install dependencies:**
@@ -32,26 +32,21 @@ send tx hash: 0xed2e25a921695148d185e9a0bffb27c3cbd2be88b7e67f8e60b6feee8f13bc4e
 
 3. **Set up your environment variables:**
 
-   Create a `.env` file in the root directory of the project and set the `BATCH_CALL_DELEGATION_CONTRACT_ADDRESS` variable:
-
-   ```plaintext
-   BATCH_CALL_DELEGATION_CONTRACT_ADDRESS=your_contract_address_here
-   ```
+   Create a `.env` file in the root directory of the project and set params.
 
 ## Deployment
 
 To deploy the Batch Call Delegation contract, run the following command:
 
 ```bash
-npx hardhat ignition deploy ignition/modules/BatchCallDelegation.ts --network sepolia_1
+npx hardhat ignition deploy ignition/modules/BatchCallDelegation.ts --network sepolia
 ```
 
-### Transaction Results
+set the `BATCH_CALL_DELEGATION_CONTRACT_ADDRESS` variable to `.env` file:
 
-Upon successful deployment, you will receive the following transaction hashes:
-
-- **Contract Write Hash:** `0x9e7ff257c22532222a05f8df529275498455cecead2b875aeb92c8fe2b502217`
-- **Send Transaction Hash:** `0xed2e25a921695148d185e9a0bffb27c3cbd2be88b7e67f8e60b6feee8f13bc4e`
+```plaintext
+BATCH_CALL_DELEGATION_CONTRACT_ADDRESS=your_contract_address_here
+```
 
 ## Sending Transactions
 
@@ -61,6 +56,12 @@ To send a transaction using the deployed contract, run:
 npm run send-tx
 ```
 
+You will receive the following transaction hashes:
+
+- **Contract Write Hash:** `0x9e7ff257c22532222a05f8df529275498455cecead2b875aeb92c8fe2b502217`
+- **Send Transaction Hash:** `0xed2e25a921695148d185e9a0bffb27c3cbd2be88b7e67f8e60b6feee8f13bc4e`
+
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -68,9 +69,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Contributing
 
 Feel free to submit issues or pull requests if you want to contribute to this repository.
-```
-
-### Notes:
-- Replace `your-repo-name` with the actual name of your repository.
-- Ensure that the `.env` file and any sensitive information are not included in your repository by adding `.env` to your `.gitignore` file.
-- You may want to add more detailed instructions or explanations based on your project’s complexity.
