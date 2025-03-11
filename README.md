@@ -31,7 +31,7 @@
 To deploy Test ERC20:
 
 ```bash
-npm run deploy-erc20
+npm run deploy:erc20
 ```
 
 set the `ERC20_TOKEN_ADDRESS` variable to `.env` file:
@@ -43,13 +43,13 @@ ERC20_TOKEN_ADDRESS=your_contract_address_here
 Mint token to tx account:
 
 ```bash
-npm run mint
+npm run mint:erc20
 ```
 
 To deploy the Batch Call Delegation contract, run the following command:
 
 ```bash
-npm run deploy-batchcall
+npm run deploy:batchcall
 ```
 
 set the `BATCH_CALL_DELEGATION_CONTRACT_ADDRESS` variable to `.env` file:
@@ -67,7 +67,7 @@ First, you need to send 0.1 ETH to the address corresponding to `TX_ACCOUNT_PRIV
 To send a transaction using the deployed contract, run:
 
 ```bash
-npm run send-native-token
+npm run send:native
 ```
 
 You will receive the following transaction hashes:
@@ -80,7 +80,7 @@ You will receive the following transaction hashes:
 To send a transaction using the deployed contract, run:
 
 ```bash
-npm run send-erc20-token
+npm run send:erc20
 ```
 
 You will receive the following transaction hashes:

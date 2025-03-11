@@ -3,7 +3,7 @@ import { privateKeyToAccount } from 'viem/accounts'
 import { sepolia } from 'viem/chains'
 import { eip7702Actions } from 'viem/experimental'
 import * as dotenv from 'dotenv';
-import { BatchCallDelegationAbi } from './abi';
+import { BatchCallDelegationAbi } from './abi'; // Fixed casing issue
 dotenv.config();
 
 (async () => {

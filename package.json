@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "deploy-erc20": "npx hardhat ignition deploy ignition/modules/ERC20Token.ts --network custom",
-    "deploy-batchcall": "npx hardhat ignition deploy ignition/modules/BatchCallDelegation.ts --network custom",
-    "mint": "npx ts-node scripts/mint.ts",
-    "send-native-token": "npx ts-node scripts/send_native_token.ts",
-    "send-erc20-token": "npx ts-node scripts/send_erc20_token.ts"
+    "deploy:erc20": "npx hardhat ignition deploy ignition/modules/ERC20Token.ts --network custom",
+    "deploy:batchcall": "npx hardhat ignition deploy ignition/modules/BatchCallDelegation.ts --network custom",
+    "send:native": "npx ts-node scripts/SendNativeToken.ts",
+    "mint:erc20": "npx ts-node scripts/mint.ts",
+    "send:erc20": "npx ts-node scripts/SendERC20Token.ts"
   },
   "author": "",
   "license": "ISC",
