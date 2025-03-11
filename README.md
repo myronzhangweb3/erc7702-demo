@@ -71,8 +71,7 @@ npm run send:native
 
 You will receive the following transaction hashes:
 
-- **Contract Write Hash:** `0x9e7ff257c22532222a05f8df529275498455cecead2b875aeb92c8fe2b502217`
-- **Send Transaction Hash:** `0xed2e25a921695148d185e9a0bffb27c3cbd2be88b7e67f8e60b6feee8f13bc4e`
+send native token tx hash: 0x16d5a340696555c5720fd20f574f66a9efbe80870fa038209fb1f397a52ae37c
 
 ### ERC20 Token
 
@@ -84,9 +83,7 @@ npm run send:erc20
 
 You will receive the following transaction hashes:
 
-- **Contract Write Hash:** `0x9e7ff257c22532222a05f8df529275498455cecead2b875aeb92c8fe2b502217`
-- **Send Transaction Hash:** `0xed2e25a921695148d185e9a0bffb27c3cbd2be88b7e67f8e60b6feee8f13bc4e`
-
+send erc20 tx hash: 0xd0c53a86e2f4ee09fc0379752057b929a7ba15e7212804365d6a3a09dd6c0328
 
 ## License
 
