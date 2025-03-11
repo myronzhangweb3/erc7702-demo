@@ -11,7 +11,7 @@ const config: HardhatUserConfig = {
 module.exports = {
   solidity: "0.8.28",
   networks: {
-    sepolia: {
+    rpc: {
       url: process.env["RPC_URL"],
       accounts: [process.env["DEPLOY_PRIVATE_KEY"]],
     },

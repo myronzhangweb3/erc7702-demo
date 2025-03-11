@@ -3,14 +3,19 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "send-tx": "npx ts-node scripts/send_tx.ts"
+    "deploy-erc20": "npx hardhat ignition deploy ignition/modules/ERC20Token.ts --network custom",
+    "deploy-batchcall": "npx hardhat ignition deploy ignition/modules/BatchCallDelegation.ts --network custom",
+    "mint": "npx ts-node scripts/mint.ts",
+    "send-native-token": "npx ts-node scripts/send_native_token.ts",
+    "send-erc20-token": "npx ts-node scripts/send_native_token.ts"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@openzeppelin/contracts": "^5.2.0",
     "dotenv": "^16.4.7",
+    "ethers": "^6.13.5",
     "viem": "^2.23.9"
   },
   "devDependencies": {
