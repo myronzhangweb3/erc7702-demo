@@ -1,9 +1,8 @@
 import { createWalletClient, defineChain, encodeFunctionData, http, parseEther } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
-import { sepolia } from 'viem/chains'
 import { eip7702Actions } from 'viem/experimental'
 import * as dotenv from 'dotenv';
-import { abi } from './abi';
+import { BatchCallDelegationAbi, ERC20Abi } from './abi';
 import { ethers } from 'ethers';
 dotenv.config();
 
@@ -36,52 +35,34 @@ dotenv.config();
     sponsor,
   });
 
+  const erc20ContractAddress = process.env["ERC20_TOKEN_ADDRESS"]?.substring(2);
   // contract writes
   const contractWritesHash = await walletClient.writeContract({
     account: sponsor,
-    abi,
+    abi: BatchCallDelegationAbi,
     address: walletClient.account.address,
     functionName: 'execute',
     args: [[
       {
-        data: '0x',
-        to: '0xcb98643b8786950F0461f3B0edf99D88F274574D',
-        value: parseEther('0.0001'),
+        data: encodeFunctionData({
+          abi: ERC20Abi,
+          functionName: 'transfer',
+          args: ['0xf3bd3c09a1610528c393C124f449274cc47C7FC4', parseEther('0.1')],
+        }),
+        to: `0x${erc20ContractAddress}`,
+        value: parseEther('0'),
       }, {
-        data: '0x',
-        to: '0xf3bd3c09a1610528c393C124f449274cc47C7FC4',
-        value: parseEther('0.0002'),
+        data: encodeFunctionData({
+          abi: ERC20Abi,
+          functionName: 'transfer',
+          args: ['0xf3bd3c09a1610528c393C124f449274cc47C7FC4', parseEther('0.2')],
+        }),
+        to: `0x${erc20ContractAddress}`,
+        value: parseEther('0'),
       }
     ]],
     authorizationList: [authorization],
   });
-  console.log(`contract writes hash: ${contractWritesHash}`);
-
-  // send tx
-  const sendTxHash = await walletClient.sendTransaction({
-    account: sponsor,
-    authorizationList: [authorization],
-    data: encodeFunctionData({
-      abi,
-      functionName: 'execute',
-      args: [
-        [
-          {
-            data: '0x',
-            to: '0xcb98643b8786950F0461f3B0edf99D88F274574D',
-            value: parseEther('0.0003'),
-          },
-          {
-            data: '0x',
-            to: '0xf3bd3c09a1610528c393C124f449274cc47C7FC4',
-            value: parseEther('0.0004'),
-          },
-        ],
-      ]
-    }),
-    to: walletClient.account.address,
-  })
-  console.log(`send tx hash: ${sendTxHash}`);
-
+  console.log(`send erc20 tx hash: ${contractWritesHash}`);
 
 })();

@@ -7,7 +7,7 @@
     "deploy-batchcall": "npx hardhat ignition deploy ignition/modules/BatchCallDelegation.ts --network custom",
     "mint": "npx ts-node scripts/mint.ts",
     "send-native-token": "npx ts-node scripts/send_native_token.ts",
-    "send-erc20-token": "npx ts-node scripts/send_native_token.ts"
+    "send-erc20-token": "npx ts-node scripts/send_erc20_token.ts"
   },
   "author": "",
   "license": "ISC",

@@ -3,7 +3,7 @@ import { privateKeyToAccount } from 'viem/accounts'
 import { sepolia } from 'viem/chains'
 import { eip7702Actions } from 'viem/experimental'
 import * as dotenv from 'dotenv';
-import { abi } from './abi';
+import { BatchCallDelegationAbi } from './abi';
 dotenv.config();
 
 (async () => {
@@ -28,7 +28,7 @@ dotenv.config();
   // contract writes
   const contractWritesHash = await walletClient.writeContract({
     account: sponsor,
-    abi,
+    abi: BatchCallDelegationAbi,
     address: walletClient.account.address,
     functionName: 'execute',
     args: [[
@@ -44,33 +44,6 @@ dotenv.config();
     ]],
     authorizationList: [authorization],
   });
-  console.log(`contract writes hash: ${contractWritesHash}`);
-
-  // send tx
-  const sendTxHash = await walletClient.sendTransaction({
-    account: sponsor, 
-    authorizationList: [authorization],
-    data: encodeFunctionData({
-      abi,
-      functionName: 'execute',
-      args: [
-        [
-          {
-            data: '0x',
-            to: '0xcb98643b8786950F0461f3B0edf99D88F274574D',
-            value: parseEther('0.0003'),
-          },
-          {
-           data: '0x',
-            to: '0xf3bd3c09a1610528c393C124f449274cc47C7FC4',
-            value: parseEther('0.0004'),
-          },
-        ],
-      ]
-    }),
-    to: walletClient.account.address,
-  })
-  console.log(`send tx hash: ${sendTxHash}`);
-
+  console.log(`send native token tx hash: ${contractWritesHash}`);
 
 })();
