@@ -1,7 +1,8 @@
 # ERC7702 demo
 
 ## Feature
-- [x] execute code for EOA account
+- [x] Gas fee payment
+- [ ] Account recovery
 
 ## Setup
 
