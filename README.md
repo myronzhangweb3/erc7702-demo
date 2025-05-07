@@ -1,8 +1,10 @@
 # ERC7702 demo
 
 ## Feature
-- [x] Gas fee payment
-- [ ] Account recovery
+- [x] Batch Transactions
+- [x] Gas Sponsorship
+- [ ] Limited Access Delegation
+- [ ] Wallet Recovery
 
 ## Setup
 

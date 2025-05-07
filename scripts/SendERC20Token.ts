@@ -2,7 +2,7 @@ import { createWalletClient, defineChain, encodeFunctionData, http, parseEther }
 import { privateKeyToAccount } from 'viem/accounts'
 import { eip7702Actions } from 'viem/experimental'
 import * as dotenv from 'dotenv';
-import { BatchCallDelegationAbi, ERC20Abi } from './abi';
+import { BatchCallDelegationAbi, ERC20Abi } from './ABI';
 import { ethers } from 'ethers';
 dotenv.config();
 

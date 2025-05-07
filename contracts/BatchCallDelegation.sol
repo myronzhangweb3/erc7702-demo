@@ -15,4 +15,6 @@ contract BatchCallDelegation {
       require(success, "call reverted");
     }
   }
+
+  receive() external payable {}
 }

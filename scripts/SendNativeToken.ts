@@ -3,7 +3,7 @@ import { privateKeyToAccount } from 'viem/accounts'
 import { sepolia } from 'viem/chains'
 import { eip7702Actions } from 'viem/experimental'
 import * as dotenv from 'dotenv';
-import { BatchCallDelegationAbi } from './abi'; // Fixed casing issue
+import { BatchCallDelegationAbi } from './ABI';
 import { ethers } from 'ethers';
 dotenv.config();
 
@@ -28,7 +28,7 @@ dotenv.config();
     transport: http(),
   }).extend(eip7702Actions())
 
-  // authorize contract designation
+  // authorize contract designation, signers: sponsor
   const sponsor = privateKeyToAccount(`0x${process.env["SPONSOR_PRIVATE_KEY"]}`);
   console.log(`sponsor address: ${sponsor.address}`);
   const sponsorAccountWalletClient = createWalletClient({
@@ -54,7 +54,7 @@ dotenv.config();
     sponsor,
   });
 
-  // contract writes
+  // contract writes, signers: sponsor, txAccount
   const contractWritesHash = await txAccountWalletClient.writeContract({
     account: sponsor,
     abi: BatchCallDelegationAbi,

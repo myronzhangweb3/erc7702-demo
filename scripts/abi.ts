@@ -1,30 +1,38 @@
 export const BatchCallDelegationAbi = [
-  {
-    "type": "function",
-    "name": "execute",
-    "inputs": [
-      {
-        "name": "calls",
-        "type": "tuple[]",
-        "components": [
-          {
-            "name": "data",
-            "type": "bytes",
-          },
-          {
-            "name": "to",
-            "type": "address",
-          },
-          {
-            "name": "value",
-            "type": "uint256",
-          }
-        ]
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "payable"
-  },
+    {
+        "inputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "bytes",
+                        "name": "data",
+                        "type": "bytes"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "to",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "value",
+                        "type": "uint256"
+                    }
+                ],
+                "internalType": "struct BatchCallDelegation.Call[]",
+                "name": "calls",
+                "type": "tuple[]"
+            }
+        ],
+        "name": "execute",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "stateMutability": "payable",
+        "type": "receive"
+    }
 ] as const
 
 export const ERC20Abi = [

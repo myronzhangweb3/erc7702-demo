@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "compile": "npx hardhat compile",
     "deploy:erc20": "npx hardhat ignition deploy ignition/modules/ERC20Token.ts --network custom",
     "deploy:batchcall": "npx hardhat ignition deploy ignition/modules/BatchCallDelegation.ts --network custom",
     "send:native": "npx ts-node scripts/SendNativeToken.ts",
