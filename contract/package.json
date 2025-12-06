@@ -1,6 +1,7 @@
 {
-  "name": "erc7702-demo",
+  "name": "erc7702-contracts",
   "version": "1.0.0",
+  "description": "ERC7702 Smart Contracts",
   "main": "index.js",
   "scripts": {
     "compile": "npx hardhat compile",
@@ -12,7 +13,6 @@
   },
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "@openzeppelin/contracts": "^5.2.0",
     "dotenv": "^16.4.7",
