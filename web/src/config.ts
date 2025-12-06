@@ -4,7 +4,7 @@ export const CONFIG = {
   BATCH_CALL_DELEGATION_CONTRACT_ADDRESS: '0x90489BDa2d09131471c287F3cc67EA60cf48c157' as `0x${string}`,
 
   // RPC URL - 从用户输入获取或使用默认值
-  DEFAULT_RPC_URL: 'https://eth-sepolia.g.alchemy.com/v2/dy9GTRd5auqHdQ0_qtdDnLRjK81AGxzk',
+  DEFAULT_RPC_URL: 'https://api.zan.top/eth-sepolia',
 
   // Chain信息
   CHAIN_NAME: 'Sepolia',
