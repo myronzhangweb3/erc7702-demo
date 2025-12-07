@@ -2,19 +2,19 @@ import { useState } from 'react'
 import { useWallet } from '../hooks/useWallet'
 import { Card } from '../components/Card'
 import { CONFIG, getChainById } from '../config'
-import { createPrivateKeyWalletClient, createCustomPublicClient } from '../utils/web3'
-import { parseEther, formatEther } from 'viem'
+import { createPrivateKeyWalletClient } from '../utils/web3'
+import { isAddress, parseEther } from 'viem'
 import { ERC20Abi } from '../utils/abi'
 
 export const MintToken = () => {
-  const { txAccount, rpcUrl, chainId, privateKey, gasFeePayerPrivateKey } = useWallet()
+  const { txAccount, rpcUrl, chainId, txAccountPrivateKey, gasFeePayerPrivateKey } = useWallet()
   const [recipientAddress, setRecipientAddress] = useState('')
   const [amount, setAmount] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [txHash, setTxHash] = useState('')
-  const [balance, setBalance] = useState<string>('')
+
 
   /**
    * 铸造ERC20代币
@@ -27,17 +27,19 @@ export const MintToken = () => {
     setLoading(true)
 
     try {
-      // 使用txAccount或用户输入的地址
-      const recipient = (recipientAddress || txAccount) as `0x${string}`
+      const recipient = recipientAddress || txAccount
       if (!recipient) {
         throw new Error('请输入接收地址')
+      }
+      if (!isAddress(recipient)) {
+        throw new Error('请输入合法的接收地址')
       }
 
       if (!txAccount) {
         throw new Error('未登录')
       }
 
-      const senderPrivateKey = gasFeePayerPrivateKey || privateKey;
+      const senderPrivateKey = gasFeePayerPrivateKey || txAccountPrivateKey;
 
       if (!senderPrivateKey) {
         throw new Error('私钥不存在，请重新登录')
@@ -68,11 +70,6 @@ export const MintToken = () => {
       if (recipientAddress) {
         setRecipientAddress('')
       }
-
-      // 刷新余额
-      setTimeout(() => {
-        checkBalance()
-      }, 2000)
     } catch (err) {
       console.error('Mint失败:', err)
       setError(err instanceof Error ? err.message : 'Mint失败')
@@ -81,67 +78,11 @@ export const MintToken = () => {
     }
   }
 
-  /**
-   * 查询余额
-   */
-  const checkBalance = async () => {
-    if (!txAccount) return
-
-    try {
-      const publicClient = createCustomPublicClient(chainId, rpcUrl)
-
-      const balance = await publicClient.readContract({
-        address: CONFIG.ERC20_TOKEN_ADDRESS,
-        abi: ERC20Abi,
-        functionName: 'balanceOf',
-        args: [txAccount],
-      }) as bigint
-
-      setBalance(formatEther(balance))
-    } catch (err) {
-      console.error('查询余额失败:', err)
-    }
-  }
-
   const chain = getChainById(chainId)
 
   return (
     <div>
       <Card title="Mint ERC20 Token">
-        {/* 余额显示 */}
-        <div style={{
-          padding: '1rem',
-          backgroundColor: '#f8f9fa',
-          borderRadius: '8px',
-          marginBottom: '2rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <div>
-            <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.25rem' }}>
-              当前余额
-            </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#333' }}>
-              {balance ? `${balance} Tokens` : '点击刷新查看'}
-            </div>
-          </div>
-          <button
-            onClick={checkBalance}
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: '#007bff',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '0.875rem'
-            }}
-          >
-            刷新余额
-          </button>
-        </div>
-
         <form onSubmit={handleMint}>
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={labelStyle}>

@@ -1,14 +1,12 @@
 import {
-  BrowserProvider,
-  Contract,
-  parseEther as ethersParseEther,
   formatEther as ethersFormatEther,
   Wallet,
-  JsonRpcProvider
+  JsonRpcProvider,
+  Contract
 } from 'ethers'
-import { createWalletClient, http } from 'viem'
+import { createWalletClient, Hex, http } from 'viem'
 import { Address, privateKeyToAccount } from 'viem/accounts'
-import { eip7702Actions } from 'viem/experimental'
+import { verifyAuthorization } from 'viem/utils'
 import { createCustomChain } from './chain'
 
 /**
@@ -56,36 +54,6 @@ async function rpcRequestWithRetry<T>(
 }
 
 /**
- * 获取 Web3 Provider (支持 MetaMask, Rabby Wallet 等)
- */
-export const getMetaMaskProvider = () => {
-  if (typeof window !== 'undefined' && window.ethereum) {
-    return window.ethereum
-  }
-  return null
-}
-
-/**
- * 获取 ethers Provider
- */
-export const getEthersProvider = () => {
-  const provider = getMetaMaskProvider()
-  if (!provider) {
-    throw new Error('未检测到 Web3 钱包。请安装 MetaMask、Rabby Wallet 或其他 Web3 钱包。')
-  }
-  return new BrowserProvider(provider)
-}
-
-/**
- * 获取 Signer (基于 MetaMask)
- * @deprecated 不再使用 MetaMask，请使用 getPrivateKeySigner
- */
-export const getSigner = async () => {
-  const provider = await getEthersProvider()
-  return await provider.getSigner()
-}
-
-/**
  * 获取基于私钥的 Signer
  */
 export const getPrivateKeySigner = (privateKey: string, rpcUrl: string) => {
@@ -98,50 +66,61 @@ export const getPrivateKeySigner = (privateKey: string, rpcUrl: string) => {
  * 使用 viem 和私钥直接签署和发送
  */
 export const sendAuthorizationTransaction = async (
-  privateKey: string,
-  contractAddress: string,
+  txAccountPrivateKey: Hex,
+  contractAddress: Address,
   chainId: number,
   rpcUrl: string,
-  gasFeePayerPrivateKey?: string | null,
+  gasFeePayerPrivateKey?: Hex | null,
 ): Promise<string> => {
   try {
     // 创建 viem 账户（从私钥）
-    const account = privateKeyToAccount(privateKey as `0x${string}`)
+    const txAccount = privateKeyToAccount(txAccountPrivateKey)
     const chain = createCustomChain(chainId, rpcUrl);
 
     // 创建 wallet client
     const walletClient = createWalletClient({
-      account,
+      account: txAccount,
       chain: chain,
       transport: http(rpcUrl),
-    }).extend(eip7702Actions)
+    })
 
     let executor: Address | 'self';
     let txSenderClient: typeof walletClient;
 
     if (gasFeePayerPrivateKey) {
-      const gasFeePayer = privateKeyToAccount(gasFeePayerPrivateKey as `0x${string}`);
+      const gasFeePayer = privateKeyToAccount(gasFeePayerPrivateKey);
       executor = gasFeePayer.address;
       txSenderClient = createWalletClient({
         account: gasFeePayer,
         chain: chain,
         transport: http(rpcUrl),
-      }).extend(eip7702Actions);
+      });
     } else {
       executor = 'self';
       txSenderClient = walletClient;
     }
 
-    console.log('Account:', account.address)
+    console.log('TxAccount:', txAccount.address)
     console.log('Target:', contractAddress)
     console.log('ChainId:', chainId)
 
     // 发送 EIP-7702 授权交易
     const authorization = await walletClient.signAuthorization({
-      contractAddress: contractAddress as Address,
+      contractAddress: contractAddress,
       executor: executor,
     });
-     
+
+    // 验证 authorization
+    const valid = await verifyAuthorization({
+      address: txAccount.address,
+      authorization,
+    })
+    if (!valid) {
+      throw new Error(
+        'EIP-7702 authorization 验证失败',
+      )
+    }
+
     const hash = await txSenderClient.sendTransaction({
       authorizationList: [authorization],
       data: "0x",
@@ -156,50 +135,6 @@ export const sendAuthorizationTransaction = async (
       'EIP-7702 授权失败\n\n' +
       '原始错误: ' + error.message
     )
-  }
-}
-
-// createManualAuthorization 函数已移除
-// 现在使用 viem 的 EIP-7702 支持，它会自动处理授权签名
-
-/**
- * 执行批量调用 - 关键修改：不发送到已代理的地址
- * 而是通过合约交互方式调用
- * @deprecated 不再使用 MetaMask，请使用 executeBatchCallsWithPrivateKey
- */
-export const executeBatchCalls = async (
-  calls: Array<{
-    data: string
-    to: string
-    value: bigint
-  }>,
-  abi: any,
-  totalValue: bigint = BigInt(0)
-): Promise<string> => {
-  try {
-    const signer = await getSigner()
-    const signerAddress = await signer.getAddress()
-
-    console.log('执行批量调用，Signer 地址:', signerAddress)
-    console.log('Calls:', calls)
-
-    // 创建合约实例 - 注意：这里使用 signer 的地址
-    // 因为 signer 已经被代理到合约
-    const contract = new Contract(signerAddress, abi, signer)
-
-    console.log('调用 execute 函数...')
-
-    // 直接调用 execute 函数
-    const tx = await contract.execute(calls, {
-      value: totalValue,
-    })
-
-    console.log('交易已发送:', tx.hash)
-
-    return tx.hash
-  } catch (error) {
-    console.error('执行批量调用失败:', error)
-    throw error
   }
 }
 
@@ -343,9 +278,6 @@ export const getNativeBalance = async (address: string, rpcUrl: string): Promise
     throw error;
   }
 };
-
-// 导出 ethers 的工具函数
-export { ethersParseEther as parseEther, ethersFormatEther as formatEther }
 
 // 扩展window类型
 declare global {

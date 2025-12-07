@@ -64,7 +64,7 @@ export const Home = () => {
       }
 
 
-      await connectWallet(formattedPrivateKey, rpcUrl, formattedGasFeePayerPrivateKey)
+      await connectWallet(formattedPrivateKey as `0x${string}`, rpcUrl, formattedGasFeePayerPrivateKey)
       navigate('/delegation')
     } catch (err) {
       setError(err instanceof Error ? err.message : '登录失败')
@@ -162,15 +162,10 @@ export const Home = () => {
             <strong>准备私钥：</strong>从您的以太坊钱包导出账户私钥
           </li>
           <li style={{ marginBottom: '0.5rem' }}>
-            <strong>确保测试网余额：</strong>账户需要有 Sepolia 测试网 ETH（可从 <a href="https://sepoliafaucet.com/"
-                                                                       target="_blank" rel="noopener noreferrer"
-                                                                       style={{
-                                                                         color: '#17a2b8',
-                                                                         textDecoration: 'underline'
-                                                                       }}>水龙头</a> 获取）
+            <strong>确保测试网余额：</strong>账户需要有 ETH
           </li>
           <li style={{ marginBottom: '0.5rem' }}>
-            <strong>配置 RPC：</strong>输入 Sepolia 测试网的 RPC URL（或使用默认值）
+            <strong>配置 RPC：</strong>输入网络的 RPC URL（或使用默认值 Sepolia）
           </li>
           <li style={{ marginBottom: '0.5rem' }}>
             <strong>配置 Gas Fee Payer (可选)：</strong>输入一个单独的账户私钥，用于支付Gas费
@@ -223,12 +218,12 @@ export const Home = () => {
             type="text"
             value={rpcUrl}
             onChange={(e) => setRpcUrl(e.target.value)}
-            placeholder="https://eth-sepolia.g.alchemy.com/v2/demo"
+            placeholder=""
             style={inputStyle}
             required
           />
           <div style={hintStyle}>
-            输入区块链节点的RPC地址（Sepolia 测试网）
+            输入区块链节点的RPC地址
           </div>
         </div>
 

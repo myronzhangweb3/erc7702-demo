@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useWallet } from '../hooks/useWallet'
 import { Card } from '../components/Card'
 import { CONFIG, getChainById } from '../config'
-import { createPrivateKeyWalletClient, getErc20Balance } from '../utils/web3'
-import { parseEther, encodeFunctionData, isAddress } from 'viem'
+import { createPrivateKeyWalletClient } from '../utils/web3'
+import { parseEther, encodeFunctionData, isAddress, Hex } from 'viem'
 import { ERC20Abi, BatchCallDelegationAbi } from '../utils/abi'
 
 interface TransferItem {
@@ -12,27 +12,14 @@ interface TransferItem {
 }
 
 export const SendERC20 = () => {
-  const { txAccount, isDelegated, rpcUrl, chainId, updateDelegationStatus, privateKey, gasFeePayerPrivateKey } = useWallet()
-  const [tokenAddress, setTokenAddress] = useState(CONFIG.ERC20_TOKEN_ADDRESS)
+  const { txAccount, isDelegated, rpcUrl, chainId, updateDelegationStatus, txAccountPrivateKey, gasFeePayerPrivateKey } = useWallet()
+  const [tokenAddress, setTokenAddress] = useState<string>(CONFIG.ERC20_TOKEN_ADDRESS)
   const [transfers, setTransfers] = useState<TransferItem[]>([{ to: '', amount: '' }])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [txHashes, setTxHashes] = useState<string[]>([])
-  const [balance, setBalance] = useState('')
 
-  const checkBalance = async () => {
-    if (txAccount && isAddress(tokenAddress)) {
-      const bal = await getErc20Balance(tokenAddress, txAccount, chainId, rpcUrl);
-      setBalance(bal);
-    }
-  };
-
-  useEffect(() => {
-    checkBalance();
-    const interval = setInterval(checkBalance, 5000);
-    return () => clearInterval(interval);
-  }, [txAccount, rpcUrl, chainId, tokenAddress]);
 
   /**
    * 添加转账项
@@ -69,9 +56,15 @@ export const SendERC20 = () => {
 
     try {
       // 验证所有转账项
+      if (!isAddress(tokenAddress)) {
+        throw new Error('请输入合法的Token合约地址')
+      }
       for (const transfer of transfers) {
         if (!transfer.to || !transfer.amount) {
           throw new Error('请填写所有转账信息')
+        }
+        if (!isAddress(transfer.to)) {
+          throw new Error(`接收地址 ${transfer.to} 不合法`)
         }
       }
 
@@ -98,7 +91,7 @@ export const SendERC20 = () => {
       throw new Error('未登录')
     }
 
-    const senderPrivateKey = gasFeePayerPrivateKey || privateKey;
+    const senderPrivateKey = gasFeePayerPrivateKey || txAccountPrivateKey;
 
     if (!senderPrivateKey) {
       throw new Error('私钥不存在，请重新登录')
@@ -111,9 +104,9 @@ export const SendERC20 = () => {
       data: encodeFunctionData({
         abi: ERC20Abi,
         functionName: 'transfer',
-        args: [transfer.to as `0x${string}`, parseEther(transfer.amount)],
+        args: [transfer.to as Hex, parseEther(transfer.amount)],
       }),
-      to: tokenAddress,
+      to: tokenAddress as Hex,
       value: parseEther('0'),
     }))
 
@@ -149,12 +142,12 @@ export const SendERC20 = () => {
       throw new Error('未登录')
     }
 
-    if (!privateKey) {
+    if (!txAccountPrivateKey) {
       throw new Error('私钥不存在，请重新登录')
     }
 
     // 创建基于私钥的钱包客户端
-    const walletClient = createPrivateKeyWalletClient(privateKey, chainId, rpcUrl)
+    const walletClient = createPrivateKeyWalletClient(txAccountPrivateKey, chainId, rpcUrl)
 
     console.log('使用普通方式逐笔发送ERC20...')
 
@@ -166,10 +159,10 @@ export const SendERC20 = () => {
       console.log(`发送第${i + 1}笔转账...`, transfer)
 
       const txHash = await walletClient.writeContract({
-        address: tokenAddress,
+        address: tokenAddress as Hex,
         abi: ERC20Abi,
         functionName: 'transfer',
-        args: [transfer.to as `0x${string}`, parseEther(transfer.amount)],
+        args: [transfer.to as Hex, parseEther(transfer.amount)],
       })
 
       console.log(`第${i + 1}笔转账已发送:`, txHash)
@@ -190,39 +183,6 @@ export const SendERC20 = () => {
   return (
     <div>
       <Card title="发送 ERC20 Token">
-        {/* 余额显示 */}
-        <div style={{
-          padding: '1rem',
-          backgroundColor: '#f8f9fa',
-          borderRadius: '8px',
-          marginBottom: '2rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <div>
-            <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.25rem' }}>
-              当前余额
-            </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#333' }}>
-              {balance ? `${balance} Tokens` : '加载中...'}
-            </div>
-          </div>
-          <button
-            onClick={checkBalance}
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: '#007bff',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '0.875rem'
-            }}
-          >
-            刷新余额
-          </button>
-        </div>
         {/* 绑定状态提示 */}
         <div style={{
           padding: '1rem',
@@ -279,7 +239,7 @@ export const SendERC20 = () => {
             <input
               type="text"
               value={tokenAddress}
-              onChange={(e) => setTokenAddress(e.target.value as `0x${string}`)}
+              onChange={(e) => setTokenAddress(e.target.value)}
               placeholder="0x..."
               style={inputStyle}
               required

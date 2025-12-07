@@ -4,8 +4,14 @@ export const CHAINS = {
   sepolia: {
     name: 'Sepolia',
     chainId: 11155111,
-    rpcUrl: 'https://api.zan.top/eth-sepolia',
+    rpcUrl: 'https://eth-sepolia.g.alchemy.com/v2/demo',
     explorerUrl: 'https://sepolia.etherscan.io',
+  },
+  op_sepolia: {
+    name: 'OP Sepolia',
+    chainId: 11155420,
+    rpcUrl: 'https://optimism-sepolia-public.nodies.app',
+    explorerUrl: 'https://optimistic.etherscan.io',
   },
 };
 

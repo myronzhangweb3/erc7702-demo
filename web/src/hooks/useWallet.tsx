@@ -3,14 +3,15 @@ import { WalletState } from '../types'
 import { CONFIG, getChainById } from '../config'
 import { checkDelegationStatus, getChainId } from '../utils/ethers-web3'
 import { privateKeyToAccount } from 'viem/accounts'
+import { Hex } from 'viem'
 
 interface WalletContextType extends WalletState {
-  connectWallet: (privateKey: string, rpcUrl: string, gasFeePayerPrivateKey?: `0x${string}`) => Promise<void>
+  connectWallet: (privateKey: Hex, rpcUrl: string, gasFeePayerPrivateKey?: Hex) => Promise<void>
   disconnect: () => void
   updateDelegationStatus: () => Promise<void>
-  switchChain: (chainId: number) => void;
-  privateKey: string | null;
-  gasFeePayerPrivateKey: string | null;
+  switchChain: (chainId: number) => void
+  txAccountPrivateKey: Hex | null
+  gasFeePayerPrivateKey: Hex | null
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined)
@@ -24,8 +25,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     rpcUrl: CONFIG.DEFAULT_RPC_URL,
     chainId: -1,
   })
-  const [txAccountPrivateKey, setTxAccountPrivateKey] = useState<string | null>(null)
-  const [gasFeePayerPrivateKey, setGasFeePayerPrivateKey] = useState<string | null>(null);
+  const [txAccountPrivateKey, setTxAccountPrivateKey] = useState<Hex | null>(null)
+  const [gasFeePayerPrivateKey, setGasFeePayerPrivateKey] = useState<Hex | null>(null);
 
   /**
    * 使用私钥登录
@@ -33,10 +34,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
    * @param rpcUrl - RPC URL
    * @param gasFeePayerPk - gas payer 私钥
    */
-  const connectWallet = async (txAccountPrivateKey: string, rpcUrl: string, gasFeePayerPk?: string) => {
+  const connectWallet = async (txAccountPrivateKey: Hex, rpcUrl: string, gasFeePayerPrivateKey?: Hex) => {
     try {
       // 使用 viem 从私钥生成账户
-      const account = privateKeyToAccount(txAccountPrivateKey as `0x${string}`)
+      const account = privateKeyToAccount(txAccountPrivateKey)
       const accountAddress = account.address
 
       // 获取链ID
@@ -46,11 +47,11 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       const isDelegated = await checkDelegationStatus(accountAddress, rpcUrl)
 
       // gas payer 地址
-      const payerAccount = gasFeePayerPk ? privateKeyToAccount(gasFeePayerPk as `0x${string}`).address : null;
+      const payerAccount = gasFeePayerPrivateKey ? privateKeyToAccount(gasFeePayerPrivateKey).address : null;
       
       // 保存到状态（私钥只在内存中，不保存到 localStorage）
       setTxAccountPrivateKey(txAccountPrivateKey)
-      setGasFeePayerPrivateKey(gasFeePayerPk || null)
+      setGasFeePayerPrivateKey(gasFeePayerPrivateKey || null)
       setWalletState({
         txAccount: accountAddress,
         gasFeePayer: payerAccount,
@@ -120,7 +121,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         disconnect,
         updateDelegationStatus,
         switchChain,
-        privateKey: txAccountPrivateKey,
+        txAccountPrivateKey,
         gasFeePayerPrivateKey,
       }}
     >

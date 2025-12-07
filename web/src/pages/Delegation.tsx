@@ -10,7 +10,7 @@ export const Delegation = () => {
     updateDelegationStatus,
     chainId,
     rpcUrl,
-    privateKey,
+    txAccountPrivateKey,
     gasFeePayerPrivateKey,
     txAccount,
   } = useWallet()
@@ -35,7 +35,7 @@ export const Delegation = () => {
         throw new Error('未连接钱包')
       }
 
-      if (!privateKey) {
+      if (!txAccountPrivateKey) {
         throw new Error('请输入私钥')
       }
 
@@ -43,7 +43,7 @@ export const Delegation = () => {
 
       // 发送 EIP-7702 授权交易
       const hash = await sendAuthorizationTransaction(
-        privateKey,
+        txAccountPrivateKey,
         CONFIG.BATCH_CALL_DELEGATION_CONTRACT_ADDRESS,
         chainId,
         rpcUrl,
@@ -82,7 +82,7 @@ export const Delegation = () => {
         throw new Error('未连接钱包')
       }
 
-      if (!privateKey) {
+      if (!txAccountPrivateKey) {
         throw new Error('请输入私钥')
       }
 
@@ -90,7 +90,7 @@ export const Delegation = () => {
 
       // 发送指向零地址的授权交易来解除绑定
       const hash = await sendAuthorizationTransaction(
-        privateKey,
+        txAccountPrivateKey,
         '0x0000000000000000000000000000000000000000',
         chainId,
         rpcUrl,

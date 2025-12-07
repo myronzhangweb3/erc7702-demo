@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useWallet } from '../hooks/useWallet'
 import { Card } from '../components/Card'
-import { executeBatchCallsWithPrivateKey, parseEther, getPrivateKeySigner, getNativeBalance } from '../utils/ethers-web3'
+import { executeBatchCallsWithPrivateKey, getPrivateKeySigner, getNativeBalance } from '../utils/ethers-web3'
+import { isAddress, parseEther } from 'viem'
 import { BatchCallDelegationAbi } from '../utils/abi'
 import { getChainById } from '../config'
 
@@ -11,7 +12,7 @@ interface TransferItem {
 }
 
 export const SendNative = () => {
-  const { txAccount, isDelegated, updateDelegationStatus, privateKey, rpcUrl, chainId, gasFeePayerPrivateKey } = useWallet()
+  const { txAccount, isDelegated, updateDelegationStatus, txAccountPrivateKey, rpcUrl, chainId, gasFeePayerPrivateKey } = useWallet()
   const [transfers, setTransfers] = useState<TransferItem[]>([{ to: '', amount: '' }])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -71,6 +72,9 @@ export const SendNative = () => {
         if (!transfer.to || !transfer.amount) {
           throw new Error('请填写所有转账信息')
         }
+        if (!isAddress(transfer.to)) {
+          throw new Error(`接收地址 ${transfer.to} 不合法`)
+        }
       }
 
       if (isDelegated) {
@@ -96,7 +100,7 @@ export const SendNative = () => {
       throw new Error('未登录')
     }
 
-    const senderPrivateKey = gasFeePayerPrivateKey || privateKey;
+    const senderPrivateKey = gasFeePayerPrivateKey || txAccountPrivateKey;
 
     if (!senderPrivateKey) {
       throw new Error('私钥不存在，请重新登录')
@@ -106,8 +110,8 @@ export const SendNative = () => {
 
     // 构建批量调用数据（Native转账不需要data）
     const calls = transfers.map((transfer) => ({
-      data: '0x',
-      to: transfer.to,
+      data: '0x' as const,
+      to: transfer.to as `0x${string}`,
       value: parseEther(transfer.amount),
     }))
 
@@ -147,7 +151,7 @@ export const SendNative = () => {
       throw new Error('未登录')
     }
 
-    const senderPrivateKey = gasFeePayerPrivateKey || privateKey;
+    const senderPrivateKey = gasFeePayerPrivateKey || txAccountPrivateKey;
 
     if (!senderPrivateKey) {
       throw new Error('私钥不存在，请重新登录')
@@ -164,7 +168,7 @@ export const SendNative = () => {
       console.log(`发送第${i + 1}笔转账...`, transfer)
 
       const tx = await signer.sendTransaction({
-        to: transfer.to,
+        to: transfer.to as `0x${string}`,
         value: parseEther(transfer.amount),
       })
 
