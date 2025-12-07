@@ -147,51 +147,6 @@ export const sendAuthorizationTransaction = async (
 }
 
 /**
- * 使用私钥执行批量调用
- */
-export const executeBatchCallsWithPrivateKey = async (
-  privateKey: Hex,
-  rpcUrl: string,
-  calls: Array<{
-    data: string
-    to: string
-    value: bigint
-  }>,
-  abi: any,
-  totalValue: bigint = BigInt(0),
-  gasFeePayerPrivateKey?: Hex | null,
-): Promise<string> => {
-  try {
-    const txAccountSigner = getPrivateKeySigner(privateKey, rpcUrl)
-    const txAccountAddress = await txAccountSigner.getAddress()
-
-    const finalSigner = gasFeePayerPrivateKey ? getPrivateKeySigner(gasFeePayerPrivateKey, rpcUrl) : txAccountSigner;
-
-    console.log('执行批量调用，Signer 地址:', txAccountAddress)
-    console.log('Gas Payer 地址:', await finalSigner.getAddress())
-    console.log('Calls:', calls)
-
-    // 创建合约实例 - 注意：这里使用 signer 的地址
-    // 因为 signer 已经被代理到合约
-    const contract = new Contract(txAccountAddress, abi, finalSigner)
-
-    console.log('调用 execute 函数...')
-
-    // 直接调用 execute 函数
-    const tx = await contract.execute(calls, {
-      value: totalValue,
-    })
-
-    console.log('交易已发送:', tx.hash)
-
-    return tx.hash
-  } catch (error) {
-    console.error('执行批量调用失败:', error)
-    throw error
-  }
-}
-
-/**
  * 检查地址是否已绑定代理
  */
 export const checkDelegationStatus = async (

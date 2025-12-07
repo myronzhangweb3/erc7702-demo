@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useWallet } from '../hooks/useWallet'
 import { Card } from '../components/Card'
-import { executeBatchCallsWithPrivateKey, getPrivateKeySigner, getNativeBalance } from '../utils/ethers-web3'
-import { isAddress, parseEther } from 'viem'
-import { BatchCallDelegationAbi } from '../utils/abi'
+import { getNativeBalance } from '../utils/ethers-web3'
+import { Address, isAddress, parseEther } from 'viem'
 import { getChainById } from '../config'
+import { createPrivateKeyWalletClient, executeBatchCalls } from '../utils/web3'
 
 interface TransferItem {
   to: string
@@ -105,7 +105,7 @@ export const SendNative = () => {
     // 构建批量调用数据（Native转账不需要data）
     const calls = transfers.map((transfer) => ({
       data: '0x' as const,
-      to: transfer.to as `0x${string}`,
+      to: transfer.to as Address,
       value: parseEther(transfer.amount),
     }))
 
@@ -118,14 +118,15 @@ export const SendNative = () => {
     )
 
     // 使用私钥执行批量调用
-    const hash = await executeBatchCallsWithPrivateKey(
+    const hash = await executeBatchCalls({
       txAccountPrivateKey,
       rpcUrl,
+      chainId,
       calls,
-      BatchCallDelegationAbi,
-      totalValue,
+      txAccount,
       gasFeePayerPrivateKey,
-    )
+      totalValue
+    })
 
     console.log('批量转账交易已发送:', hash)
 
@@ -142,7 +143,7 @@ export const SendNative = () => {
    * 使用普通方式逐笔发送Native Token
    */
   const sendWithoutDelegation = async () => {
-    if (!txAccount) {
+    if (!txAccount || !txAccountPrivateKey) {
       throw new Error('未登录')
     }
 
@@ -154,7 +155,7 @@ export const SendNative = () => {
 
     console.log('使用普通方式逐笔发送Native Token...')
 
-    const signer = getPrivateKeySigner(senderPrivateKey, rpcUrl)
+    const walletClient = createPrivateKeyWalletClient(senderPrivateKey, chainId, rpcUrl)
     const hashes: string[] = []
 
     // 逐笔发送
@@ -162,13 +163,13 @@ export const SendNative = () => {
       const transfer = transfers[i]
       console.log(`发送第${i + 1}笔转账...`, transfer)
 
-      const tx = await signer.sendTransaction({
-        to: transfer.to as `0x${string}`,
+      const tx = await walletClient.sendTransaction({
+        to: transfer.to as Address,
         value: parseEther(transfer.amount),
       })
 
-      console.log(`第${i + 1}笔转账已发送:`, tx.hash)
-      hashes.push(tx.hash)
+      console.log(`第${i + 1}笔转账已发送:`, tx)
+      hashes.push(tx)
     }
 
     setSuccess(

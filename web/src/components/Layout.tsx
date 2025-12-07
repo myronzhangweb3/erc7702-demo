@@ -31,7 +31,7 @@ export const Layout = ({ children }: LayoutProps) => {
           alignItems: 'center'
         }}>
           <h1 style={{ margin: 0, fontSize: '1.5rem', color: '#333' }}>
-            ERC7702 Demo {gasFeePayer && `- Gas Fee Payer: ${gasFeePayer.slice(0, 6)}...${gasFeePayer.slice(-4)}`}
+            ERC7702 Demo
           </h1>
 
           {isConnected && (

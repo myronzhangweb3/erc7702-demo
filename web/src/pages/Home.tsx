@@ -80,7 +80,7 @@ export const Home = () => {
           <p style={{ fontSize: '1.125rem', lineHeight: '1.6', color: '#555' }}>
             您已成功登录。请使用导航栏访问各项功能：
           </p>
-          <ul style={{ fontSize: '1rem', lineHeight: '1.8', color: '#555', marginTop: '1rem' }}>
+          <ul style={{ fontSize: '1rem', lineHeight: '1.8', color: '#555', marginTop: '1rem', marginLeft: '2rem' }}>
             <li><strong>代理管理</strong> - 绑定或解绑EIP7702代理地址</li>
             <li><strong>Mint Token</strong> - 铸造ERC20代币</li>
             <li><strong>发送Native</strong> - 发送原生代币（支持批量）</li>

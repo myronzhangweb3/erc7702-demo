@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { useWallet } from '../hooks/useWallet'
 import { Card } from '../components/Card'
 import { CONFIG, getChainById } from '../config'
-import { createPrivateKeyWalletClient } from '../utils/web3'
+import { createPrivateKeyWalletClient, executeBatchCalls } from '../utils/web3'
 import { parseEther, encodeFunctionData, isAddress, Hex } from 'viem'
-import { ERC20Abi, BatchCallDelegationAbi } from '../utils/abi'
+import { ERC20Abi } from '../utils/abi'
 
 interface TransferItem {
   to: string
@@ -87,14 +87,8 @@ export const SendERC20 = () => {
    * 使用代理合约批量发送ERC20
    */
   const sendWithDelegation = async () => {
-    if (!txAccount) {
+    if (!txAccount || !txAccountPrivateKey) {
       throw new Error('未登录')
-    }
-
-    const senderPrivateKey = gasFeePayerPrivateKey || txAccountPrivateKey;
-
-    if (!senderPrivateKey) {
-      throw new Error('私钥不存在，请重新登录')
     }
 
     console.log('使用代理合约批量发送ERC20...')
@@ -107,20 +101,19 @@ export const SendERC20 = () => {
         args: [transfer.to as Hex, parseEther(transfer.amount)],
       }),
       to: tokenAddress as Hex,
-      value: parseEther('0'),
+      value: BigInt(0),
     }))
 
     console.log('批量调用数据:', calls)
 
-    // 创建基于私钥的钱包客户端
-    const walletClient = createPrivateKeyWalletClient(senderPrivateKey, chainId, rpcUrl)
-
     // 调用 execute 函数
-    const hash = await walletClient.writeContract({
-      address: txAccount, // 发送到自己（已代理的账户）
-      abi: BatchCallDelegationAbi,
-      functionName: 'execute',
-      args: [calls],
+    const hash = await executeBatchCalls({
+      txAccountPrivateKey,
+      rpcUrl,
+      chainId,
+      calls,
+      txAccount,
+      gasFeePayerPrivateKey,
     })
 
     console.log('批量转账交易已发送:', hash)
@@ -138,16 +131,16 @@ export const SendERC20 = () => {
    * 使用普通方式逐笔发送ERC20
    */
   const sendWithoutDelegation = async () => {
-    if (!txAccount) {
+    if (!txAccount || !txAccountPrivateKey) {
       throw new Error('未登录')
     }
 
-    if (!txAccountPrivateKey) {
+    const senderPrivateKey = gasFeePayerPrivateKey || txAccountPrivateKey
+    if (!senderPrivateKey) {
       throw new Error('私钥不存在，请重新登录')
     }
-
     // 创建基于私钥的钱包客户端
-    const walletClient = createPrivateKeyWalletClient(txAccountPrivateKey, chainId, rpcUrl)
+    const walletClient = createPrivateKeyWalletClient(senderPrivateKey, chainId, rpcUrl)
 
     console.log('使用普通方式逐笔发送ERC20...')
 
