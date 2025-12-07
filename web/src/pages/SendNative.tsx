@@ -96,14 +96,8 @@ export const SendNative = () => {
    * 使用代理合约批量发送Native Token
    */
   const sendWithDelegation = async () => {
-    if (!txAccount) {
+    if (!txAccount || !txAccountPrivateKey) {
       throw new Error('未登录')
-    }
-
-    const senderPrivateKey = gasFeePayerPrivateKey || txAccountPrivateKey;
-
-    if (!senderPrivateKey) {
-      throw new Error('私钥不存在，请重新登录')
     }
 
     console.log('使用代理合约批量发送Native Token...')
@@ -125,11 +119,12 @@ export const SendNative = () => {
 
     // 使用私钥执行批量调用
     const hash = await executeBatchCallsWithPrivateKey(
-      senderPrivateKey,
+      txAccountPrivateKey,
       rpcUrl,
       calls,
       BatchCallDelegationAbi,
-      totalValue
+      totalValue,
+      gasFeePayerPrivateKey,
     )
 
     console.log('批量转账交易已发送:', hash)

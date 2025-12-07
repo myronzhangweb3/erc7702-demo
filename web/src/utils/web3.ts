@@ -1,5 +1,4 @@
 import { Hex, createWalletClient, http } from 'viem'
-import { eip7702Actions } from 'viem/experimental'
 import { privateKeyToAccount } from 'viem/accounts'
 import { createCustomChain } from './chain'
 
@@ -18,5 +17,5 @@ export const createPrivateKeyWalletClient = (
     account,
     chain,
     transport: http(rpcUrl),
-  }).extend(eip7702Actions)
+  })
 }

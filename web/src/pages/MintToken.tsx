@@ -86,7 +86,7 @@ export const MintToken = () => {
         <form onSubmit={handleMint}>
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={labelStyle}>
-              接收地址（留空则为自己）
+              接收地址（留空则为交易账户）
             </label>
             <input
               type="text"

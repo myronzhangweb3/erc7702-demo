@@ -121,10 +121,18 @@ export const sendAuthorizationTransaction = async (
       )
     }
 
+    let gas = undefined;
+    switch (chainId) {
+      case 11155420:
+        gas = BigInt(46000);
+        break;
+    }
+
     const hash = await txSenderClient.sendTransaction({
       authorizationList: [authorization],
       data: "0x",
       to: walletClient.account.address,
+      gas: gas,
     });
 
     console.log('授权交易已发送:', hash)
@@ -142,7 +150,7 @@ export const sendAuthorizationTransaction = async (
  * 使用私钥执行批量调用
  */
 export const executeBatchCallsWithPrivateKey = async (
-  privateKey: string,
+  privateKey: Hex,
   rpcUrl: string,
   calls: Array<{
     data: string
@@ -150,18 +158,22 @@ export const executeBatchCallsWithPrivateKey = async (
     value: bigint
   }>,
   abi: any,
-  totalValue: bigint = BigInt(0)
+  totalValue: bigint = BigInt(0),
+  gasFeePayerPrivateKey?: Hex | null,
 ): Promise<string> => {
   try {
-    const signer = getPrivateKeySigner(privateKey, rpcUrl)
-    const signerAddress = await signer.getAddress()
+    const txAccountSigner = getPrivateKeySigner(privateKey, rpcUrl)
+    const txAccountAddress = await txAccountSigner.getAddress()
 
-    console.log('执行批量调用，Signer 地址:', signerAddress)
+    const finalSigner = gasFeePayerPrivateKey ? getPrivateKeySigner(gasFeePayerPrivateKey, rpcUrl) : txAccountSigner;
+
+    console.log('执行批量调用，Signer 地址:', txAccountAddress)
+    console.log('Gas Payer 地址:', await finalSigner.getAddress())
     console.log('Calls:', calls)
 
     // 创建合约实例 - 注意：这里使用 signer 的地址
     // 因为 signer 已经被代理到合约
-    const contract = new Contract(signerAddress, abi, signer)
+    const contract = new Contract(txAccountAddress, abi, finalSigner)
 
     console.log('调用 execute 函数...')
 

@@ -140,7 +140,7 @@ npm run preview
 ### Mint ERC20 Token
 
 1. 导航到"Mint Token"页面
-2. 输入接收地址（留空则为自己）
+2. 输入接收地址（留空则为交易账户）
 3. 输入铸造数量
 4. 点击"Mint Token"按钮
 5. 等待交易确认

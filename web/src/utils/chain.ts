@@ -11,7 +11,7 @@ export const CHAINS = {
     name: 'OP Sepolia',
     chainId: 11155420,
     rpcUrl: 'https://optimism-sepolia-public.nodies.app',
-    explorerUrl: 'https://optimistic.etherscan.io',
+    explorerUrl: 'https://sepolia-optimism.etherscan.io',
   },
 };
 
