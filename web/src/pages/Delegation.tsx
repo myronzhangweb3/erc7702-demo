@@ -4,6 +4,7 @@ import { Card } from '../components/Card'
 import { CONFIG, getChainById } from '../config'
 import { sendAuthorizationTransaction } from '../utils/ethers-web3'
 import { isAddress } from 'viem'
+import { privateKeyToAddress } from 'viem/accounts'
 
 export const Delegation = () => {
   const { isDelegated, updateDelegationStatus, chainId, rpcUrl, privateKey, setGasFeePayer, gasFeePayer, txAccount } = useWallet()
@@ -11,7 +12,7 @@ export const Delegation = () => {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [txHash, setTxHash] = useState('')
-  const [gasFeePayerAddress, setGasFeePayerAddress] = useState(gasFeePayer || '')
+  const [gasFeePayerAddressPrivateKey, setGasFeePayerAddressPrivateKey] = useState(gasFeePayer || '')
 
   /**
    * 绑定代理地址
@@ -47,6 +48,7 @@ export const Delegation = () => {
       // 发送 EIP-7702 授权交易
       const hash = await sendAuthorizationTransaction(
         formattedPrivateKey,
+        gasFeePayerAddressPrivateKey,
         CONFIG.BATCH_CALL_DELEGATION_CONTRACT_ADDRESS,
         chainId,
         rpcUrl
@@ -98,11 +100,21 @@ export const Delegation = () => {
         throw new Error('私钥格式错误：必须为 64 位十六进制字符（可选 0x 前缀）')
       }
 
+      let formattedGasPayerPrivateKey = gasFeePayerAddressPrivateKey.trim()
+      if (!formattedGasPayerPrivateKey.startsWith('0x')) {
+        formattedGasPayerPrivateKey = '0x' + formattedGasPayerPrivateKey
+      }
+
+      if (formattedGasPayerPrivateKey.length !== 66) {
+        throw new Error('GasPayer 私钥格式错误：必须为 64 位十六进制字符（可选 0x 前缀）')
+      }
+
       console.log('发送解绑授权交易...')
 
       // 发送指向零地址的授权交易来解除绑定
       const hash = await sendAuthorizationTransaction(
         formattedPrivateKey,
+        gasFeePayerAddressPrivateKey,
         '0x0000000000000000000000000000000000000000',
         chainId,
         rpcUrl
@@ -126,21 +138,22 @@ export const Delegation = () => {
   }
 
   const handleSetGasFeePayer = () => {
-    if (!gasFeePayerAddress) {
+    if (!gasFeePayerAddressPrivateKey) {
       if (txAccount) {
         setGasFeePayer(txAccount);
         setSuccess('Gas-Fee代付地址已重置为交易账户地址');
       } else {
-        setError('请连接钱包以设置交易账户作为Gas-Fee代付地址');
+        setError('Gas-Fee代付地址已重置为交易账户地址设置失败');
       }
       return;
     }
 
-    if (!isAddress(gasFeePayerAddress)) {
-      setError('请输入有效的Gas-Fee代付地址');
+    const address = privateKeyToAddress(gasFeePayerAddressPrivateKey as `0x${string}`)
+    if (!isAddress(address)) {
+      setError('请输入有效的Gas-Fee代付地址私钥');
       return;
     }
-    setGasFeePayer(gasFeePayerAddress as `0x${string}`);
+    setGasFeePayer(gasFeePayerAddressPrivateKey as `0x${string}`);
     setSuccess('Gas-Fee代付地址设置成功');
   };
 
@@ -184,7 +197,7 @@ export const Delegation = () => {
           </div>
         </div>
 
-        {isDelegated && (
+        { (
           <div style={{
             padding: '1.5rem',
             backgroundColor: '#f8f9fa',
@@ -201,8 +214,8 @@ export const Delegation = () => {
             <div style={{ display: 'flex', gap: '1rem' }}>
               <input
                 type="text"
-                value={gasFeePayerAddress}
-                onChange={(e) => setGasFeePayerAddress(e.target.value)}
+                value={gasFeePayerAddressPrivateKey}
+                onChange={(e) => setGasFeePayerAddressPrivateKey(e.target.value)}
                 placeholder="请输入Gas-Fee代付地址"
                 style={{
                   flex: 1,

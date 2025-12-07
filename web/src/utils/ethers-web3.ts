@@ -7,7 +7,7 @@ import {
   JsonRpcProvider
 } from 'ethers'
 import { createPublicClient, createWalletClient, http } from 'viem'
-import { Address, privateKeyToAccount } from 'viem/accounts'
+import { Account, Address, privateKeyToAccount } from 'viem/accounts'
 import { eip7702Actions } from 'viem/experimental'
 import { createCustomChain } from './chain'
 
@@ -99,6 +99,7 @@ export const getPrivateKeySigner = (privateKey: string, rpcUrl: string) => {
  */
 export const sendAuthorizationTransaction = async (
   privateKey: string,
+  gasFeePayerPrivateKey: string,
   contractAddress: string,
   chainId: number,
   rpcUrl: string
@@ -106,6 +107,7 @@ export const sendAuthorizationTransaction = async (
   try {
     // 创建 viem 账户（从私钥）
     const account = privateKeyToAccount(privateKey as `0x${string}`)
+    const gasFeePayer = privateKeyToAccount(gasFeePayerPrivateKey as `0x${string}`)
     const chain = createCustomChain(chainId, rpcUrl);
 
     // 创建 public client 获取 nonce
@@ -126,6 +128,12 @@ export const sendAuthorizationTransaction = async (
       transport: http(rpcUrl),
     }).extend(eip7702Actions)
 
+    const gasfeePayerWalletClient = createWalletClient({
+      account: gasFeePayer,
+      chain: chain,
+      transport: http(rpcUrl),
+    }).extend(eip7702Actions)
+
     console.log('Account:', account.address)
     console.log('Target:', contractAddress)
     console.log('ChainId:', chainId)
@@ -134,10 +142,12 @@ export const sendAuthorizationTransaction = async (
     // 发送 EIP-7702 授权交易
     const authorization = await walletClient.signAuthorization({
       contractAddress: contractAddress as Address,
-      executor: "self",
+      // todo(@myron) 如果gasFeePayer.address不为空则使用gasfeepayer地址，否则为self
+      executor: gasFeePayer.address,
+      // executor: "self",
     });
      
-    const hash = await walletClient.sendTransaction({
+    const hash = await gasfeePayerWalletClient.sendTransaction({
       authorizationList: [authorization],
       data: "0x",
       to: walletClient.account.address,
