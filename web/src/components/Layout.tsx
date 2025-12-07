@@ -34,15 +34,25 @@ export const Layout = ({ children }: LayoutProps) => {
             ERC7702 Demo
           </h1>
 
-          {isConnected && (
-            <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-              <Link to="/" style={navLinkStyle}>首页</Link>
-              <Link to="/delegation" style={navLinkStyle}>代理管理</Link>
-              <Link to="/mint" style={navLinkStyle}>Mint Token</Link>
-              <Link to="/send-native" style={navLinkStyle}>发送Native</Link>
-              <Link to="/send-erc20" style={navLinkStyle}>发送ERC20</Link>
-            </div>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+            <a href="https://github.com/myronzhangweb3/erc7702-demo" target="_blank" rel="noopener noreferrer"
+               style={{ color: '#333', display: 'flex', alignItems: 'center' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M12 0.297c-6.627 0-12 5.373-12 12 0 5.302 3.438 9.8 8.205 11.385 0.6.11 0.82-.26 0.82-.58 0-.285-0.01-1.04-0.015-2.04-3.338 0.724-4.042-1.61-4.042-1.61-0.545-1.385-1.328-1.75-1.328-1.75-1.087-0.745 0.083-0.73 0.083-0.73 1.205 0.085 1.838 1.238 1.838 1.238 1.07 1.835 2.809 1.305 3.492 0.998 0.108-0.775 0.418-1.305 0.762-1.605-2.665-0.3-5.466-1.332-5.466-5.93 0-1.31 0.465-2.38 1.235-3.22-0.135-0.303-0.54-1.523 0.115-3.175 0 0 1.005-0.322 3.3-1.22 0.955-0.26 1.98-0.39 3.005-0.39 1.025 0 2.05 0.13 3.005 0.39 2.295 0.898 3.3 1.22 3.3 1.22 0.655 1.652 0.25 2.872 0.115 3.175 0.77 0.84 1.235 1.91 1.235 3.22 0 4.58-2.804 5.625-5.475 5.92 0.43 0.375 0.82 1.12 0.82 2.275 0 1.64-0.015 2.96-0.015 3.36 0 0.32 0.218 0.69 0.825 0.57C20.565 22.18 24 17.68 24 12.297 24 5.373 18.627 0.297 12 0.297z"/>
+              </svg>
+            </a>
+
+            {isConnected && (
+              <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+                <Link to="/" style={navLinkStyle}>首页</Link>
+                <Link to="/delegation" style={navLinkStyle}>代理管理</Link>
+                <Link to="/mint" style={navLinkStyle}>Mint Token</Link>
+                <Link to="/send-native" style={navLinkStyle}>发送Native</Link>
+                <Link to="/send-erc20" style={navLinkStyle}>发送ERC20</Link>
+              </div>
+            )}
+          </div>
         </div>
       </nav>
 

@@ -2,7 +2,6 @@ import {
   formatEther as ethersFormatEther,
   Wallet,
   JsonRpcProvider,
-  Contract
 } from 'ethers'
 import { createWalletClient, Hex, http } from 'viem'
 import { Address, privateKeyToAccount } from 'viem/accounts'
