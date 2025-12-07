@@ -12,7 +12,7 @@ interface TransferItem {
 }
 
 export const SendERC20 = () => {
-  const { txAccount, isDelegated, rpcUrl, chainId, updateDelegationStatus, privateKey } = useWallet()
+  const { txAccount, isDelegated, rpcUrl, chainId, updateDelegationStatus, privateKey, gasFeePayerPrivateKey } = useWallet()
   const [tokenAddress, setTokenAddress] = useState(CONFIG.ERC20_TOKEN_ADDRESS)
   const [transfers, setTransfers] = useState<TransferItem[]>([{ to: '', amount: '' }])
   const [loading, setLoading] = useState(false)
@@ -98,7 +98,9 @@ export const SendERC20 = () => {
       throw new Error('未登录')
     }
 
-    if (!privateKey) {
+    const senderPrivateKey = gasFeePayerPrivateKey || privateKey;
+
+    if (!senderPrivateKey) {
       throw new Error('私钥不存在，请重新登录')
     }
 
@@ -118,7 +120,7 @@ export const SendERC20 = () => {
     console.log('批量调用数据:', calls)
 
     // 创建基于私钥的钱包客户端
-    const walletClient = createPrivateKeyWalletClient(privateKey, chainId, rpcUrl)
+    const walletClient = createPrivateKeyWalletClient(senderPrivateKey, chainId, rpcUrl)
 
     // 调用 execute 函数
     const hash = await walletClient.writeContract({
@@ -467,11 +469,14 @@ export const SendERC20 = () => {
               </tr>
               <tr>
                 <td style={{ paddingTop: '0.5rem' }}>支付者</td>
-                <td style={{ paddingTop: '0.5rem' }}>TxAccount</td>
+                <td style={{ paddingTop: '0.5rem' }}>Gas-Fee Payer (if configured)</td>
                 <td style={{ paddingTop: '0.5rem' }}>TxAccount</td>
               </tr>
             </tbody>
           </table>
+          <p style={{ fontSize: '0.75rem', color: '#666', marginTop: '1rem' }}>
+            * 在非代理模式下, Gas-Fee Payer 不可用, 因为这需要您先对 Gas-Fee Payer 地址进行 ERC20 'approve' 操作
+          </p>
         </div>
       </Card>
     </div>

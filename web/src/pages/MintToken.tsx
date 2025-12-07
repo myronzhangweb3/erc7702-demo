@@ -7,7 +7,7 @@ import { parseEther, formatEther } from 'viem'
 import { ERC20Abi } from '../utils/abi'
 
 export const MintToken = () => {
-  const { txAccount, rpcUrl, chainId, privateKey } = useWallet()
+  const { txAccount, rpcUrl, chainId, privateKey, gasFeePayerPrivateKey } = useWallet()
   const [recipientAddress, setRecipientAddress] = useState('')
   const [amount, setAmount] = useState('')
   const [loading, setLoading] = useState(false)
@@ -37,12 +37,14 @@ export const MintToken = () => {
         throw new Error('未登录')
       }
 
-      if (!privateKey) {
+      const senderPrivateKey = gasFeePayerPrivateKey || privateKey;
+
+      if (!senderPrivateKey) {
         throw new Error('私钥不存在，请重新登录')
       }
 
       // 创建基于私钥的钱包客户端
-      const walletClient = createPrivateKeyWalletClient(privateKey, chainId, rpcUrl)
+      const walletClient = createPrivateKeyWalletClient(senderPrivateKey, chainId, rpcUrl)
 
       console.log('开始Mint ERC20代币...')
       console.log('接收地址:', recipient)

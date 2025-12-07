@@ -9,6 +9,7 @@ contract BatchCallDelegation {
   }
  
   function execute(Call[] calldata calls) external payable {
+    // TODO check permission
     for (uint256 i = 0; i < calls.length; i++) {
       Call memory call = calls[i];
       (bool success, ) = call.to.call{value: call.value}(call.data);

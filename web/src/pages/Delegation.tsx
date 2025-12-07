@@ -3,8 +3,6 @@ import { useWallet } from '../hooks/useWallet'
 import { Card } from '../components/Card'
 import { CONFIG, getChainById } from '../config'
 import { sendAuthorizationTransaction } from '../utils/ethers-web3'
-import { isAddress } from 'viem'
-import { privateKeyToAddress } from 'viem/accounts'
 
 export const Delegation = () => {
   const {
@@ -13,15 +11,13 @@ export const Delegation = () => {
     chainId,
     rpcUrl,
     privateKey,
-    setGasFeePayer,
-    txAccount,
     gasFeePayerPrivateKey,
+    txAccount,
   } = useWallet()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [txHash, setTxHash] = useState('')
-  const [gasPayerPk, setGasPayerPk] = useState(gasFeePayerPrivateKey || '')
 
 
   /**
@@ -51,7 +47,7 @@ export const Delegation = () => {
         CONFIG.BATCH_CALL_DELEGATION_CONTRACT_ADDRESS,
         chainId,
         rpcUrl,
-        gasPayerPk,
+        gasFeePayerPrivateKey,
       )
 
       console.log('绑定交易已发送:', hash)
@@ -98,7 +94,7 @@ export const Delegation = () => {
         '0x0000000000000000000000000000000000000000',
         chainId,
         rpcUrl,
-        gasPayerPk
+        gasFeePayerPrivateKey
       )
 
       console.log('解绑交易已发送:', hash)
@@ -117,26 +113,6 @@ export const Delegation = () => {
       setLoading(false)
     }
   }
-
-  const handleSetGasFeePayer = () => {
-    if (!gasPayerPk) {
-      setGasFeePayer(null);
-      setSuccess('Gas-Fee代付地址已清除');
-      return;
-    }
-
-    try {
-      const address = privateKeyToAddress(gasPayerPk as `0x${string}`)
-      if (!isAddress(address)) {
-        setError('请输入有效的Gas-Fee代付地址私钥');
-        return;
-      }
-      setGasFeePayer(gasPayerPk as `0x${string}`);
-      setSuccess('Gas-Fee代付地址设置成功');
-    } catch (e) {
-      setError('私钥格式错误');
-    }
-  };
 
   const chain = getChainById(chainId)
 
@@ -177,53 +153,6 @@ export const Delegation = () => {
             </button>
           </div>
         </div>
-
-        {(
-          <div style={{
-            padding: '1.5rem',
-            backgroundColor: '#f8f9fa',
-            borderRadius: '8px',
-            border: '1px solid #dee2e6',
-            marginBottom: '2rem'
-          }}>
-            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.125rem', color: '#333' }}>
-              设置Gas-Fee代付地址
-            </h3>
-            <p style={{ fontSize: '0.875rem', color: '#555', lineHeight: '1.6', marginBottom: '1.5rem' }}>
-              如果设置了Gas-Fee代付地址, 那么Batch Call交易的Gas-Fee将由该地址代付, 否则将由交易地址支付
-            </p>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <input
-                type="text"
-                value={gasPayerPk}
-                onChange={(e) => setGasPayerPk(e.target.value)}
-                placeholder="请输入Gas-Fee代付地址私钥"
-                style={{
-                  flex: 1,
-                  padding: '0.75rem',
-                  borderRadius: '4px',
-                  border: '1px solid #ced4da',
-                  fontSize: '1rem'
-                }}
-              />
-              <button
-                onClick={handleSetGasFeePayer}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  backgroundColor: '#007bff',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  cursor: 'pointer'
-                }}
-              >
-                保存
-              </button>
-            </div>
-          </div>
-        )}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           {/* 绑定卡片 */}

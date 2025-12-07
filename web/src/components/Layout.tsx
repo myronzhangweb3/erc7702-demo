@@ -57,22 +57,7 @@ export const Layout = ({ children }: LayoutProps) => {
           boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-            {/* 左侧：账户地址 */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: '1', minWidth: '300px' }}>
-              <div>
-                <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '0.25rem' }}>
-                  钱包地址
-                </div>
-                <div style={{
-                  fontSize: '0.875rem',
-                  fontFamily: 'monospace',
-                  color: '#333',
-                  fontWeight: 'bold'
-                }}>
-                  {txAccount ? `${txAccount.slice(0, 6)}...${txAccount.slice(-4)}` : ''}
-                </div>
-              </div>
-
               <div>
                 <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '0.25rem' }}>
                   Chain
@@ -89,6 +74,34 @@ export const Layout = ({ children }: LayoutProps) => {
                     <option key={chain.chainId} value={chain.chainId}>{chain.name}</option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '0.25rem' }}>
+                  交易地址
+                </div>
+                <div style={{
+                  fontSize: '0.875rem',
+                  fontFamily: 'monospace',
+                  color: '#333',
+                  fontWeight: 'bold'
+                }}>
+                  {txAccount ? `${txAccount.slice(0, 6)}...${txAccount.slice(-4)}` : ''}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '0.25rem' }}>
+                  GasPayer地址
+                </div>
+                <div style={{
+                  fontSize: '0.875rem',
+                  fontFamily: 'monospace',
+                  color: '#333',
+                  fontWeight: 'bold'
+                }}>
+                  {gasFeePayer ? `${gasFeePayer.slice(0, 6)}...${gasFeePayer.slice(-4)}` : '未配置'}
+                </div>
               </div>
 
               <div style={{

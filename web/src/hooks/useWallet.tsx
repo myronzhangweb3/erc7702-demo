@@ -8,7 +8,6 @@ interface WalletContextType extends WalletState {
   connectWallet: (privateKey: string, rpcUrl: string, gasFeePayerPrivateKey?: `0x${string}`) => Promise<void>
   disconnect: () => void
   updateDelegationStatus: () => Promise<void>
-  setGasFeePayer: (privateKey: `0x${string}` | null) => void;
   switchChain: (chainId: number) => void;
   privateKey: string | null;
   gasFeePayerPrivateKey: string | null;
@@ -23,7 +22,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     isConnected: false,
     isDelegated: false,
     rpcUrl: CONFIG.DEFAULT_RPC_URL,
-    chainId: CONFIG.CHAIN_ID,
+    chainId: -1,
   })
   const [txAccountPrivateKey, setTxAccountPrivateKey] = useState<string | null>(null)
   const [gasFeePayerPrivateKey, setGasFeePayerPrivateKey] = useState<string | null>(null);
@@ -78,7 +77,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       isConnected: false,
       isDelegated: false,
       rpcUrl: CONFIG.DEFAULT_RPC_URL,
-      chainId: CONFIG.CHAIN_ID,
+      chainId: -1,
     })
   }
 
@@ -100,22 +99,6 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
-  const setGasFeePayer = (pk: `0x${string}` | null) => {
-    setGasFeePayerPrivateKey(pk);
-    if (pk) {
-      const payerAccount = privateKeyToAccount(pk);
-      setWalletState(prev => ({
-        ...prev,
-        gasFeePayer: payerAccount.address,
-      }));
-    } else {
-      setWalletState(prev => ({
-        ...prev,
-        gasFeePayer: null,
-      }));
-    }
-  };
-
   const switchChain = async (chainId: number) => {
     const chain = getChainById(chainId);
     if (chain) {
@@ -136,7 +119,6 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         connectWallet,
         disconnect,
         updateDelegationStatus,
-        setGasFeePayer,
         switchChain,
         privateKey: txAccountPrivateKey,
         gasFeePayerPrivateKey,

@@ -11,7 +11,7 @@ interface TransferItem {
 }
 
 export const SendNative = () => {
-  const { txAccount, isDelegated, updateDelegationStatus, privateKey, rpcUrl, chainId } = useWallet()
+  const { txAccount, isDelegated, updateDelegationStatus, privateKey, rpcUrl, chainId, gasFeePayerPrivateKey } = useWallet()
   const [transfers, setTransfers] = useState<TransferItem[]>([{ to: '', amount: '' }])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -96,7 +96,9 @@ export const SendNative = () => {
       throw new Error('未登录')
     }
 
-    if (!privateKey) {
+    const senderPrivateKey = gasFeePayerPrivateKey || privateKey;
+
+    if (!senderPrivateKey) {
       throw new Error('私钥不存在，请重新登录')
     }
 
@@ -119,7 +121,7 @@ export const SendNative = () => {
 
     // 使用私钥执行批量调用
     const hash = await executeBatchCallsWithPrivateKey(
-      privateKey,
+      senderPrivateKey,
       rpcUrl,
       calls,
       BatchCallDelegationAbi,
@@ -145,13 +147,15 @@ export const SendNative = () => {
       throw new Error('未登录')
     }
 
-    if (!privateKey) {
+    const senderPrivateKey = gasFeePayerPrivateKey || privateKey;
+
+    if (!senderPrivateKey) {
       throw new Error('私钥不存在，请重新登录')
     }
 
     console.log('使用普通方式逐笔发送Native Token...')
 
-    const signer = getPrivateKeySigner(privateKey, rpcUrl)
+    const signer = getPrivateKeySigner(senderPrivateKey, rpcUrl)
     const hashes: string[] = []
 
     // 逐笔发送
@@ -450,15 +454,11 @@ export const SendNative = () => {
               </tr>
               <tr>
                 <td style={{ paddingTop: '0.5rem' }}>支付者</td>
-                <td style={{ paddingTop: '0.5rem' }}>TxAccount</td>
-                <td style={{ paddingTop: '0.5rem' }}>TxAccount</td>
+                <td style={{ paddingTop: '0.5rem' }}>Gas-Fee Payer (if configured)</td>
+                <td style={{ paddingTop: '0.5rem' }}>Gas-Fee Payer (if configured)</td>
               </tr>
             </tbody>
           </table>
-          <div style={{ marginTop: '1rem', fontSize: '0.875rem', lineHeight: '1.6' }}>
-            <strong>注意：</strong> 使用代理模式时，Native Token从txAccount账户发出，
-            但gas费用由txAccount账户支付。请确保两个账户都有足够的余额。
-          </div>
         </div>
       </Card>
     </div>

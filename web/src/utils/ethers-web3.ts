@@ -6,8 +6,8 @@ import {
   Wallet,
   JsonRpcProvider
 } from 'ethers'
-import { createPublicClient, createWalletClient, http } from 'viem'
-import { Account, Address, privateKeyToAccount } from 'viem/accounts'
+import { createWalletClient, http } from 'viem'
+import { Address, privateKeyToAccount } from 'viem/accounts'
 import { eip7702Actions } from 'viem/experimental'
 import { createCustomChain } from './chain'
 
@@ -102,7 +102,7 @@ export const sendAuthorizationTransaction = async (
   contractAddress: string,
   chainId: number,
   rpcUrl: string,
-  gasFeePayerPrivateKey?: string,
+  gasFeePayerPrivateKey?: string | null,
 ): Promise<string> => {
   try {
     // 创建 viem 账户（从私钥）

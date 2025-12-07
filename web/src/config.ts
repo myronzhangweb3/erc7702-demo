@@ -7,7 +7,6 @@ export const CONFIG = {
 
   // RPC URL - 从用户输入获取或使用默认值
   DEFAULT_RPC_URL: CHAINS.sepolia.rpcUrl,
-  CHAIN_ID: -1,
 };
 
 export { getChainById, CHAINS };
