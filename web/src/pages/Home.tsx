@@ -6,10 +6,11 @@ import { CONFIG } from '../config'
 import { privateKeyToAccount } from 'viem/accounts'
 
 export const Home = () => {
-  const { isConnected, connectWallet } = useWallet()
+  const { isConnected, connectWallet, gasFeePayer } = useWallet()
   const navigate = useNavigate()
 
   const [privateKey, setPrivateKey] = useState('')
+  const [gasFeePayerPrivateKey, setGasFeePayerPrivateKey] = useState('')
   const [rpcUrl, setRpcUrl] = useState(CONFIG.DEFAULT_RPC_URL)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -45,7 +46,25 @@ export const Home = () => {
         throw new Error('私钥无效：请检查私钥格式')
       }
 
-      await connectWallet(formattedPrivateKey, rpcUrl)
+      let formattedGasFeePayerPrivateKey: `0x${string}` | undefined = undefined
+      if (gasFeePayerPrivateKey) {
+        let tempKey = gasFeePayerPrivateKey.trim()
+        if (!tempKey.startsWith('0x')) {
+          tempKey = '0x' + tempKey
+        }
+        if (tempKey.length !== 66) {
+          throw new Error('Gas Fee Payer 私钥格式错误：必须为 64 位十六进制字符（可选 0x 前缀）')
+        }
+        try {
+          privateKeyToAccount(tempKey as `0x${string}`)
+        } catch {
+          throw new Error('Gas Fee Payer 私钥无效：请检查私钥格式')
+        }
+        formattedGasFeePayerPrivateKey = tempKey as `0x${string}`
+      }
+
+
+      await connectWallet(formattedPrivateKey, rpcUrl, formattedGasFeePayerPrivateKey)
       navigate('/delegation')
     } catch (err) {
       setError(err instanceof Error ? err.message : '登录失败')
@@ -85,7 +104,12 @@ export const Home = () => {
           </div>
         </Card>
 
-        <div style={{ marginTop: '2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
+        <div style={{
+          marginTop: '2rem',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: '1rem'
+        }}>
           <Card title="合约配置">
             <div style={{ fontSize: '0.875rem' }}>
               <div style={{ marginBottom: '1rem' }}>
@@ -102,6 +126,17 @@ export const Home = () => {
               </div>
             </div>
           </Card>
+
+          {gasFeePayer && (
+            <Card title="Gas Fee Payer">
+              <div style={{ fontSize: '0.875rem' }}>
+                <div style={{ color: '#666', marginBottom: '0.25rem' }}>Address</div>
+                <div style={{ fontFamily: 'monospace', wordBreak: 'break-all', color: '#333' }}>
+                  {gasFeePayer}
+                </div>
+              </div>
+            </Card>
+          )}
         </div>
       </div>
     )
@@ -127,10 +162,18 @@ export const Home = () => {
             <strong>准备私钥：</strong>从您的以太坊钱包导出账户私钥
           </li>
           <li style={{ marginBottom: '0.5rem' }}>
-            <strong>确保测试网余额：</strong>账户需要有 Sepolia 测试网 ETH（可从 <a href="https://sepoliafaucet.com/" target="_blank" rel="noopener noreferrer" style={{ color: '#17a2b8', textDecoration: 'underline' }}>水龙头</a> 获取）
+            <strong>确保测试网余额：</strong>账户需要有 Sepolia 测试网 ETH（可从 <a href="https://sepoliafaucet.com/"
+                                                                       target="_blank" rel="noopener noreferrer"
+                                                                       style={{
+                                                                         color: '#17a2b8',
+                                                                         textDecoration: 'underline'
+                                                                       }}>水龙头</a> 获取）
           </li>
           <li style={{ marginBottom: '0.5rem' }}>
             <strong>配置 RPC：</strong>输入 Sepolia 测试网的 RPC URL（或使用默认值）
+          </li>
+          <li style={{ marginBottom: '0.5rem' }}>
+            <strong>配置 Gas Fee Payer (可选)：</strong>输入一个单独的账户私钥，用于支付Gas费
           </li>
           <li>
             <strong>登录：</strong>输入私钥后点击登录按钮
@@ -146,7 +189,7 @@ export const Home = () => {
             type="password"
             value={privateKey}
             onChange={(e) => setPrivateKey(e.target.value)}
-            placeholder="0x..."
+            placeholder=""
             style={inputStyle}
             required
           />
@@ -154,6 +197,23 @@ export const Home = () => {
             输入您的以太坊账户私钥（64位十六进制字符，可选 0x 前缀）
           </div>
         </div>
+
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label style={labelStyle}>
+            Gas Fee Payer 私钥 (可选)
+          </label>
+          <input
+            type="password"
+            value={gasFeePayerPrivateKey}
+            onChange={(e) => setGasFeePayerPrivateKey(e.target.value)}
+            placeholder=""
+            style={inputStyle}
+          />
+          <div style={hintStyle}>
+            输入用于支付Gas费的账户私钥（如果留空，将使用主账户支付）
+          </div>
+        </div>
+
 
         <div style={{ marginBottom: '1.5rem' }}>
           <label style={labelStyle}>
@@ -263,9 +323,12 @@ export const Home = () => {
           ) : (
             <>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M2 17L12 22L22 17" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M2 12L12 17L22 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="white" strokeWidth="2" strokeLinecap="round"
+                      strokeLinejoin="round"/>
+                <path d="M2 17L12 22L22 17" stroke="white" strokeWidth="2" strokeLinecap="round"
+                      strokeLinejoin="round"/>
+                <path d="M2 12L12 17L22 12" stroke="white" strokeWidth="2" strokeLinecap="round"
+                      strokeLinejoin="round"/>
               </svg>
               登录
             </>

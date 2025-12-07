@@ -7,12 +7,22 @@ import { isAddress } from 'viem'
 import { privateKeyToAddress } from 'viem/accounts'
 
 export const Delegation = () => {
-  const { isDelegated, updateDelegationStatus, chainId, rpcUrl, privateKey, setGasFeePayer, gasFeePayer, txAccount } = useWallet()
+  const {
+    isDelegated,
+    updateDelegationStatus,
+    chainId,
+    rpcUrl,
+    privateKey,
+    setGasFeePayer,
+    txAccount,
+    gasFeePayerPrivateKey,
+  } = useWallet()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [txHash, setTxHash] = useState('')
-  const [gasFeePayerAddressPrivateKey, setGasFeePayerAddressPrivateKey] = useState(gasFeePayer || '')
+  const [gasPayerPk, setGasPayerPk] = useState(gasFeePayerPrivateKey || '')
+
 
   /**
    * 绑定代理地址
@@ -33,25 +43,15 @@ export const Delegation = () => {
         throw new Error('请输入私钥')
       }
 
-      // 验证私钥格式并自动添加 0x 前缀
-      let formattedPrivateKey = privateKey.trim()
-      if (!formattedPrivateKey.startsWith('0x')) {
-        formattedPrivateKey = '0x' + formattedPrivateKey
-      }
-
-      if (formattedPrivateKey.length !== 66) {
-        throw new Error('私钥格式错误：必须为 64 位十六进制字符（可选 0x 前缀）')
-      }
-
       console.log('发送 EIP-7702 授权交易...')
 
       // 发送 EIP-7702 授权交易
       const hash = await sendAuthorizationTransaction(
-        formattedPrivateKey,
-        gasFeePayerAddressPrivateKey,
+        privateKey,
         CONFIG.BATCH_CALL_DELEGATION_CONTRACT_ADDRESS,
         chainId,
-        rpcUrl
+        rpcUrl,
+        gasPayerPk,
       )
 
       console.log('绑定交易已发送:', hash)
@@ -90,34 +90,15 @@ export const Delegation = () => {
         throw new Error('请输入私钥')
       }
 
-      // 验证私钥格式并自动添加 0x 前缀
-      let formattedPrivateKey = privateKey.trim()
-      if (!formattedPrivateKey.startsWith('0x')) {
-        formattedPrivateKey = '0x' + formattedPrivateKey
-      }
-
-      if (formattedPrivateKey.length !== 66) {
-        throw new Error('私钥格式错误：必须为 64 位十六进制字符（可选 0x 前缀）')
-      }
-
-      let formattedGasPayerPrivateKey = gasFeePayerAddressPrivateKey.trim()
-      if (!formattedGasPayerPrivateKey.startsWith('0x')) {
-        formattedGasPayerPrivateKey = '0x' + formattedGasPayerPrivateKey
-      }
-
-      if (formattedGasPayerPrivateKey.length !== 66) {
-        throw new Error('GasPayer 私钥格式错误：必须为 64 位十六进制字符（可选 0x 前缀）')
-      }
-
       console.log('发送解绑授权交易...')
 
       // 发送指向零地址的授权交易来解除绑定
       const hash = await sendAuthorizationTransaction(
-        formattedPrivateKey,
-        gasFeePayerAddressPrivateKey,
+        privateKey,
         '0x0000000000000000000000000000000000000000',
         chainId,
-        rpcUrl
+        rpcUrl,
+        gasPayerPk
       )
 
       console.log('解绑交易已发送:', hash)
@@ -138,23 +119,23 @@ export const Delegation = () => {
   }
 
   const handleSetGasFeePayer = () => {
-    if (!gasFeePayerAddressPrivateKey) {
-      if (txAccount) {
-        setGasFeePayer(txAccount);
-        setSuccess('Gas-Fee代付地址已重置为交易账户地址');
-      } else {
-        setError('Gas-Fee代付地址已重置为交易账户地址设置失败');
-      }
+    if (!gasPayerPk) {
+      setGasFeePayer(null);
+      setSuccess('Gas-Fee代付地址已清除');
       return;
     }
 
-    const address = privateKeyToAddress(gasFeePayerAddressPrivateKey as `0x${string}`)
-    if (!isAddress(address)) {
-      setError('请输入有效的Gas-Fee代付地址私钥');
-      return;
+    try {
+      const address = privateKeyToAddress(gasPayerPk as `0x${string}`)
+      if (!isAddress(address)) {
+        setError('请输入有效的Gas-Fee代付地址私钥');
+        return;
+      }
+      setGasFeePayer(gasPayerPk as `0x${string}`);
+      setSuccess('Gas-Fee代付地址设置成功');
+    } catch (e) {
+      setError('私钥格式错误');
     }
-    setGasFeePayer(gasFeePayerAddressPrivateKey as `0x${string}`);
-    setSuccess('Gas-Fee代付地址设置成功');
   };
 
   const chain = getChainById(chainId)
@@ -197,7 +178,7 @@ export const Delegation = () => {
           </div>
         </div>
 
-        { (
+        {(
           <div style={{
             padding: '1.5rem',
             backgroundColor: '#f8f9fa',
@@ -214,9 +195,9 @@ export const Delegation = () => {
             <div style={{ display: 'flex', gap: '1rem' }}>
               <input
                 type="text"
-                value={gasFeePayerAddressPrivateKey}
-                onChange={(e) => setGasFeePayerAddressPrivateKey(e.target.value)}
-                placeholder="请输入Gas-Fee代付地址"
+                value={gasPayerPk}
+                onChange={(e) => setGasPayerPk(e.target.value)}
+                placeholder="请输入Gas-Fee代付地址私钥"
                 style={{
                   flex: 1,
                   padding: '0.75rem',
@@ -342,7 +323,7 @@ export const Delegation = () => {
             <strong>成功：</strong> {success}
             {txHash && chain && (
               <a href={`${chain.explorerUrl}/tx/${txHash}`} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '0.5rem' }}>
-                交易hash: {txHash}
+                {txHash}
               </a>
             )}
           </div>
@@ -371,3 +352,4 @@ export const Delegation = () => {
     </div>
   )
 }
+

@@ -226,8 +226,9 @@ export const MintToken = () => {
             }}>
               <strong>成功：</strong> {success}
               {txHash && chain && (
-                <a href={`${chain.explorerUrl}/tx/${txHash}`} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '1rem' }}>
-                  查看交易
+                <a href={`${chain.explorerUrl}/tx/${txHash}`} target="_blank" rel="noopener noreferrer"
+                   style={{ marginLeft: '1rem' }}>
+                  {txHash}
                 </a>
               )}
             </div>

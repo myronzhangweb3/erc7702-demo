@@ -384,7 +384,7 @@ export const SendNative = () => {
                   {txHashes.map((hash, index) => (
                     <div key={index}>
                       <a href={`${chain.explorerUrl}/tx/${hash}`} target="_blank" rel="noopener noreferrer">
-                        查看交易 {index + 1}
+                        {hash}
                       </a>
                     </div>
                   ))}

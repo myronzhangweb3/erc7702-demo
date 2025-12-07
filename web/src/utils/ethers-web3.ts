@@ -99,27 +99,15 @@ export const getPrivateKeySigner = (privateKey: string, rpcUrl: string) => {
  */
 export const sendAuthorizationTransaction = async (
   privateKey: string,
-  gasFeePayerPrivateKey: string,
   contractAddress: string,
   chainId: number,
-  rpcUrl: string
+  rpcUrl: string,
+  gasFeePayerPrivateKey?: string,
 ): Promise<string> => {
   try {
     // 创建 viem 账户（从私钥）
     const account = privateKeyToAccount(privateKey as `0x${string}`)
-    const gasFeePayer = privateKeyToAccount(gasFeePayerPrivateKey as `0x${string}`)
     const chain = createCustomChain(chainId, rpcUrl);
-
-    // 创建 public client 获取 nonce
-    const publicClient = createPublicClient({
-      chain: chain,
-      transport: http(rpcUrl),
-    })
-
-    // 获取当前 nonce
-    const nonce = await publicClient.getTransactionCount({
-      address: account.address,
-    })
 
     // 创建 wallet client
     const walletClient = createWalletClient({
@@ -128,26 +116,33 @@ export const sendAuthorizationTransaction = async (
       transport: http(rpcUrl),
     }).extend(eip7702Actions)
 
-    const gasfeePayerWalletClient = createWalletClient({
-      account: gasFeePayer,
-      chain: chain,
-      transport: http(rpcUrl),
-    }).extend(eip7702Actions)
+    let executor: Address | 'self';
+    let txSenderClient: typeof walletClient;
+
+    if (gasFeePayerPrivateKey) {
+      const gasFeePayer = privateKeyToAccount(gasFeePayerPrivateKey as `0x${string}`);
+      executor = gasFeePayer.address;
+      txSenderClient = createWalletClient({
+        account: gasFeePayer,
+        chain: chain,
+        transport: http(rpcUrl),
+      }).extend(eip7702Actions);
+    } else {
+      executor = 'self';
+      txSenderClient = walletClient;
+    }
 
     console.log('Account:', account.address)
     console.log('Target:', contractAddress)
     console.log('ChainId:', chainId)
-    console.log('Nonce:', nonce)
 
     // 发送 EIP-7702 授权交易
     const authorization = await walletClient.signAuthorization({
       contractAddress: contractAddress as Address,
-      // todo(@myron) 如果gasFeePayer.address不为空则使用gasfeepayer地址，否则为self
-      executor: gasFeePayer.address,
-      // executor: "self",
+      executor: executor,
     });
      
-    const hash = await gasfeePayerWalletClient.sendTransaction({
+    const hash = await txSenderClient.sendTransaction({
       authorizationList: [authorization],
       data: "0x",
       to: walletClient.account.address,
