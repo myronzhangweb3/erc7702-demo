@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useWallet } from '../hooks/useWallet'
 import { Card } from '../components/Card'
-import { executeBatchCallsWithPrivateKey, parseEther, getPrivateKeySigner } from '../utils/ethers-web3'
+import { executeBatchCallsWithPrivateKey, parseEther, getPrivateKeySigner, getNativeBalance } from '../utils/ethers-web3'
 import { BatchCallDelegationAbi } from '../utils/abi'
+import { getChainById } from '../config'
 
 interface TransferItem {
   to: string
@@ -10,11 +11,26 @@ interface TransferItem {
 }
 
 export const SendNative = () => {
-  const { txAccount, sponsor, isDelegated, updateDelegationStatus, privateKey, rpcUrl } = useWallet()
+  const { txAccount, isDelegated, updateDelegationStatus, privateKey, rpcUrl, chainId } = useWallet()
   const [transfers, setTransfers] = useState<TransferItem[]>([{ to: '', amount: '' }])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [txHashes, setTxHashes] = useState<string[]>([])
+  const [balance, setBalance] = useState('')
+
+  const checkBalance = async () => {
+    if (txAccount && rpcUrl) {
+      const bal = await getNativeBalance(txAccount, rpcUrl);
+      setBalance(bal);
+    }
+  };
+
+  useEffect(() => {
+    checkBalance();
+    const interval = setInterval(checkBalance, 5000);
+    return () => clearInterval(interval);
+  }, [txAccount, rpcUrl]);
 
   /**
    * 添加转账项
@@ -46,6 +62,7 @@ export const SendNative = () => {
     e.preventDefault()
     setError('')
     setSuccess('')
+    setTxHashes([])
     setLoading(true)
 
     try {
@@ -75,7 +92,7 @@ export const SendNative = () => {
    * 使用代理合约批量发送Native Token
    */
   const sendWithDelegation = async () => {
-    if (!txAccount || !sponsor) {
+    if (!txAccount) {
       throw new Error('未登录')
     }
 
@@ -101,7 +118,7 @@ export const SendNative = () => {
     )
 
     // 使用私钥执行批量调用
-    const txHash = await executeBatchCallsWithPrivateKey(
+    const hash = await executeBatchCallsWithPrivateKey(
       privateKey,
       rpcUrl,
       calls,
@@ -109,11 +126,12 @@ export const SendNative = () => {
       totalValue
     )
 
-    console.log('批量转账交易已发送:', txHash)
+    console.log('批量转账交易已发送:', hash)
 
     setSuccess(
-      `批量转账成功！共发送${transfers.length}笔交易。\n交易哈希: ${txHash}`
+      `批量转账成功！共发送${transfers.length}笔交易。`
     )
+    setTxHashes([hash])
 
     // 清空表单
     setTransfers([{ to: '', amount: '' }])
@@ -134,7 +152,7 @@ export const SendNative = () => {
     console.log('使用普通方式逐笔发送Native Token...')
 
     const signer = getPrivateKeySigner(privateKey, rpcUrl)
-    const txHashes: string[] = []
+    const hashes: string[] = []
 
     // 逐笔发送
     for (let i = 0; i < transfers.length; i++) {
@@ -147,20 +165,57 @@ export const SendNative = () => {
       })
 
       console.log(`第${i + 1}笔转账已发送:`, tx.hash)
-      txHashes.push(tx.hash)
+      hashes.push(tx.hash)
     }
 
     setSuccess(
-      `转账成功！共发送${transfers.length}笔交易。\n交易哈希:\n${txHashes.join('\n')}`
+      `转账成功！共发送${transfers.length}笔交易。`
     )
+    setTxHashes(hashes)
 
     // 清空表单
     setTransfers([{ to: '', amount: '' }])
   }
 
+  const chain = getChainById(chainId)
+
   return (
     <div>
       <Card title="发送 Native Token (ETH)">
+        {/* 余额显示 */}
+        <div style={{
+          padding: '1rem',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '8px',
+          marginBottom: '2rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div>
+            <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.25rem' }}>
+              当前余额
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#333' }}>
+              {balance ? `${balance} ETH` : '加载中...'}
+            </div>
+          </div>
+          <button
+            onClick={checkBalance}
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: '#007bff',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '0.875rem'
+            }}
+          >
+            刷新余额
+          </button>
+        </div>
+
         {/* 绑定状态提示 */}
         <div style={{
           padding: '1rem',
@@ -175,12 +230,12 @@ export const SendNative = () => {
           <div style={{ fontSize: '0.875rem', color: '#555', lineHeight: '1.6' }}>
             {isDelegated ? (
               <>
-                您的sponsor账户已绑定代理，将使用BatchCallDelegation合约批量发送，
+                您的账户已绑定代理，将使用BatchCallDelegation合约批量发送，
                 可以在一笔交易中完成多笔转账，节省gas费用。
               </>
             ) : (
               <>
-                您的sponsor账户未绑定代理，将使用普通转账方式逐笔发送。
+                您的账户未绑定代理，将使用普通转账方式逐笔发送。
                 建议先在<a href="/delegation" style={{ color: '#856404', fontWeight: 'bold' }}>代理管理页面</a>绑定代理以启用批量发送功能。
               </>
             )}
@@ -324,6 +379,17 @@ export const SendNative = () => {
               wordBreak: 'break-all'
             }}>
               <strong>成功：</strong> {success}
+              {txHashes.length > 0 && chain && (
+                <div>
+                  {txHashes.map((hash, index) => (
+                    <div key={index}>
+                      <a href={`${chain.explorerUrl}/tx/${hash}`} target="_blank" rel="noopener noreferrer">
+                        查看交易 {index + 1}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -384,14 +450,14 @@ export const SendNative = () => {
               </tr>
               <tr>
                 <td style={{ paddingTop: '0.5rem' }}>支付者</td>
-                <td style={{ paddingTop: '0.5rem' }}>Sponsor</td>
+                <td style={{ paddingTop: '0.5rem' }}>TxAccount</td>
                 <td style={{ paddingTop: '0.5rem' }}>TxAccount</td>
               </tr>
             </tbody>
           </table>
           <div style={{ marginTop: '1rem', fontSize: '0.875rem', lineHeight: '1.6' }}>
             <strong>注意：</strong> 使用代理模式时，Native Token从txAccount账户发出，
-            但gas费用由sponsor账户支付。请确保两个账户都有足够的余额。
+            但gas费用由txAccount账户支付。请确保两个账户都有足够的余额。
           </div>
         </div>
       </Card>

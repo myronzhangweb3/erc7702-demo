@@ -1,24 +1,8 @@
-import { createWalletClient, defineChain, http, PublicClient, createPublicClient, custom } from 'viem'
+import { createWalletClient, http, PublicClient, createPublicClient, custom, formatEther } from 'viem'
 import { eip7702Actions } from 'viem/experimental'
 import { privateKeyToAccount } from 'viem/accounts'
-import { CONFIG } from '../config'
-
-/**
- * 创建自定义链配置
- */
-export const createCustomChain = (chainId: number, rpcUrl: string) => {
-  return defineChain({
-    id: chainId,
-    name: CONFIG.CHAIN_NAME,
-    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-    rpcUrls: {
-      default: {
-        http: [rpcUrl],
-      },
-    },
-    testnet: true,
-  })
-}
+import { ERC20Abi } from './abi'
+import { createCustomChain } from './chain'
 
 /**
  * 获取 MetaMask Provider
@@ -298,6 +282,17 @@ export const checkEIP7702Support = async (rpcUrl: string): Promise<boolean> => {
     return false
   }
 }
+
+export const getErc20Balance = async (tokenAddress: `0x${string}`, userAddress: `0x${string}`, chainId: number, rpcUrl: string) => {
+  const publicClient = createCustomPublicClient(chainId, rpcUrl);
+  const balance = await publicClient.readContract({
+    address: tokenAddress,
+    abi: ERC20Abi,
+    functionName: 'balanceOf',
+    args: [userAddress],
+  });
+  return formatEther(balance as bigint);
+};
 
 // 扩展window类型
 declare global {

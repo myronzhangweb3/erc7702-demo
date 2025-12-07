@@ -109,6 +109,34 @@ export const Home = () => {
 
   return (
     <Card title="登录 ERC7702 Demo">
+
+      <div style={{
+        marginBottom: '2rem',
+        padding: '1.5rem',
+        backgroundColor: '#d1ecf1',
+        borderRadius: '8px',
+        fontSize: '0.875rem',
+        lineHeight: '1.6',
+        borderLeft: '4px solid #17a2b8'
+      }}>
+        <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', color: '#0c5460' }}>
+          使用步骤
+        </h3>
+        <ol style={{ margin: 0, paddingLeft: '1.5rem', color: '#0c5460' }}>
+          <li style={{ marginBottom: '0.5rem' }}>
+            <strong>准备私钥：</strong>从您的以太坊钱包导出账户私钥
+          </li>
+          <li style={{ marginBottom: '0.5rem' }}>
+            <strong>确保测试网余额：</strong>账户需要有 Sepolia 测试网 ETH（可从 <a href="https://sepoliafaucet.com/" target="_blank" rel="noopener noreferrer" style={{ color: '#17a2b8', textDecoration: 'underline' }}>水龙头</a> 获取）
+          </li>
+          <li style={{ marginBottom: '0.5rem' }}>
+            <strong>配置 RPC：</strong>输入 Sepolia 测试网的 RPC URL（或使用默认值）
+          </li>
+          <li>
+            <strong>登录：</strong>输入私钥后点击登录按钮
+          </li>
+        </ol>
+      </div>
       <form onSubmit={handleConnect}>
         <div style={{ marginBottom: '1.5rem' }}>
           <label style={labelStyle}>
@@ -235,43 +263,15 @@ export const Home = () => {
           ) : (
             <>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M2 17L12 22L22 17" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M2 12L12 17L22 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M2 17L12 22L22 17" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M2 12L12 17L22 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               登录
             </>
           )}
         </button>
       </form>
-
-      <div style={{
-        marginTop: '2rem',
-        padding: '1.5rem',
-        backgroundColor: '#d1ecf1',
-        borderRadius: '8px',
-        fontSize: '0.875rem',
-        lineHeight: '1.6',
-        borderLeft: '4px solid #17a2b8'
-      }}>
-        <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', color: '#0c5460' }}>
-          使用步骤
-        </h3>
-        <ol style={{ margin: 0, paddingLeft: '1.5rem', color: '#0c5460' }}>
-          <li style={{ marginBottom: '0.5rem' }}>
-            <strong>准备私钥：</strong>从您的以太坊钱包导出账户私钥
-          </li>
-          <li style={{ marginBottom: '0.5rem' }}>
-            <strong>确保测试网余额：</strong>账户需要有 Sepolia 测试网 ETH（可从 <a href="https://sepoliafaucet.com/" target="_blank" rel="noopener noreferrer" style={{ color: '#17a2b8', textDecoration: 'underline' }}>水龙头</a> 获取）
-          </li>
-          <li style={{ marginBottom: '0.5rem' }}>
-            <strong>配置 RPC：</strong>输入 Sepolia 测试网的 RPC URL（或使用默认值）
-          </li>
-          <li>
-            <strong>登录：</strong>输入私钥后点击登录按钮
-          </li>
-        </ol>
-      </div>
 
       <div style={{
         marginTop: '1.5rem',
@@ -286,7 +286,7 @@ export const Home = () => {
           合约配置
         </h3>
         <div style={{ marginBottom: '0.5rem' }}>
-          <div style={{ color: '#666', marginBottom: '0.25rem' }}>ERC20 Token:</div>
+          <div style={{ color: '#666', marginBottom: '0.25rem' }}>7702Test ERC20 Token:</div>
           <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', wordBreak: 'break-all', color: '#333' }}>
             {CONFIG.ERC20_TOKEN_ADDRESS}
           </div>

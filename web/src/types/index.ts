@@ -1,6 +1,6 @@
 export interface WalletState {
   txAccount: `0x${string}` | null
-  sponsor: `0x${string}` | null
+  gasFeePayer: `0x${string}` | null
   isConnected: boolean
   isDelegated: boolean
   rpcUrl: string

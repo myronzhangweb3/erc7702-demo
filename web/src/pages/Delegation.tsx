@@ -1,26 +1,30 @@
 import { useState } from 'react'
 import { useWallet } from '../hooks/useWallet'
 import { Card } from '../components/Card'
-import { CONFIG } from '../config'
+import { CONFIG, getChainById } from '../config'
 import { sendAuthorizationTransaction } from '../utils/ethers-web3'
+import { isAddress } from 'viem'
 
 export const Delegation = () => {
-  const { sponsor, isDelegated, updateDelegationStatus, chainId, rpcUrl, privateKey } = useWallet()
+  const { isDelegated, updateDelegationStatus, chainId, rpcUrl, privateKey, setGasFeePayer, gasFeePayer, txAccount } = useWallet()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [txHash, setTxHash] = useState('')
+  const [gasFeePayerAddress, setGasFeePayerAddress] = useState(gasFeePayer || '')
 
   /**
    * 绑定代理地址
-   * 使用EIP7702将sponsor账户绑定到BatchCallDelegation合约
+   * 使用EIP7702将txAccount账户绑定到BatchCallDelegation合约
    */
   const handleBind = async () => {
     setError('')
     setSuccess('')
+    setTxHash('')
     setLoading(true)
 
     try {
-      if (!sponsor) {
+      if (!txAccount) {
         throw new Error('未连接钱包')
       }
 
@@ -41,16 +45,17 @@ export const Delegation = () => {
       console.log('发送 EIP-7702 授权交易...')
 
       // 发送 EIP-7702 授权交易
-      const txHash = await sendAuthorizationTransaction(
+      const hash = await sendAuthorizationTransaction(
         formattedPrivateKey,
         CONFIG.BATCH_CALL_DELEGATION_CONTRACT_ADDRESS,
         chainId,
         rpcUrl
       )
 
-      console.log('绑定交易已发送:', txHash)
+      console.log('绑定交易已发送:', hash)
 
-      setSuccess(`绑定成功！交易哈希: ${txHash}`)
+      setSuccess(`绑定成功！`)
+      setTxHash(hash)
 
       // 等待交易确认后更新状态
       setTimeout(() => {
@@ -71,10 +76,11 @@ export const Delegation = () => {
   const handleUnbind = async () => {
     setError('')
     setSuccess('')
+    setTxHash('')
     setLoading(true)
 
     try {
-      if (!sponsor) {
+      if (!txAccount) {
         throw new Error('未连接钱包')
       }
 
@@ -95,16 +101,17 @@ export const Delegation = () => {
       console.log('发送解绑授权交易...')
 
       // 发送指向零地址的授权交易来解除绑定
-      const txHash = await sendAuthorizationTransaction(
+      const hash = await sendAuthorizationTransaction(
         formattedPrivateKey,
         '0x0000000000000000000000000000000000000000',
         chainId,
         rpcUrl
       )
 
-      console.log('解绑交易已发送:', txHash)
+      console.log('解绑交易已发送:', hash)
 
-      setSuccess(`解绑成功！交易哈希: ${txHash}`)
+      setSuccess(`解绑成功！`)
+      setTxHash(hash)
 
       // 等待交易确认后更新状态
       setTimeout(() => {
@@ -117,6 +124,27 @@ export const Delegation = () => {
       setLoading(false)
     }
   }
+
+  const handleSetGasFeePayer = () => {
+    if (!gasFeePayerAddress) {
+      if (txAccount) {
+        setGasFeePayer(txAccount);
+        setSuccess('Gas-Fee代付地址已重置为交易账户地址');
+      } else {
+        setError('请连接钱包以设置交易账户作为Gas-Fee代付地址');
+      }
+      return;
+    }
+
+    if (!isAddress(gasFeePayerAddress)) {
+      setError('请输入有效的Gas-Fee代付地址');
+      return;
+    }
+    setGasFeePayer(gasFeePayerAddress as `0x${string}`);
+    setSuccess('Gas-Fee代付地址设置成功');
+  };
+
+  const chain = getChainById(chainId)
 
   return (
     <div>
@@ -135,8 +163,8 @@ export const Delegation = () => {
               </div>
               <div style={{ fontSize: '0.875rem', color: '#555' }}>
                 {isDelegated
-                  ? '您的sponsor账户已绑定到BatchCallDelegation合约，可以使用批量交易功能。'
-                  : '您的sponsor账户尚未绑定代理合约，绑定后可使用批量交易功能。'}
+                  ? '您的账户已绑定到BatchCallDelegation合约，可以使用批量交易功能。'
+                  : '您的账户尚未绑定代理合约，绑定后可使用批量交易功能。'}
               </div>
             </div>
             <button
@@ -156,6 +184,53 @@ export const Delegation = () => {
           </div>
         </div>
 
+        {isDelegated && (
+          <div style={{
+            padding: '1.5rem',
+            backgroundColor: '#f8f9fa',
+            borderRadius: '8px',
+            border: '1px solid #dee2e6',
+            marginBottom: '2rem'
+          }}>
+            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.125rem', color: '#333' }}>
+              设置Gas-Fee代付地址
+            </h3>
+            <p style={{ fontSize: '0.875rem', color: '#555', lineHeight: '1.6', marginBottom: '1.5rem' }}>
+              如果设置了Gas-Fee代付地址, 那么Batch Call交易的Gas-Fee将由该地址代付, 否则将由交易地址支付
+            </p>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <input
+                type="text"
+                value={gasFeePayerAddress}
+                onChange={(e) => setGasFeePayerAddress(e.target.value)}
+                placeholder="请输入Gas-Fee代付地址"
+                style={{
+                  flex: 1,
+                  padding: '0.75rem',
+                  borderRadius: '4px',
+                  border: '1px solid #ced4da',
+                  fontSize: '1rem'
+                }}
+              />
+              <button
+                onClick={handleSetGasFeePayer}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  backgroundColor: '#007bff',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                保存
+              </button>
+            </div>
+          </div>
+        )}
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           {/* 绑定卡片 */}
           <div style={{
@@ -168,7 +243,7 @@ export const Delegation = () => {
               绑定代理
             </h3>
             <p style={{ fontSize: '0.875rem', color: '#555', lineHeight: '1.6', marginBottom: '1.5rem' }}>
-              绑定后，sponsor账户将能够通过BatchCallDelegation合约批量执行交易，
+              绑定后，您的账户将能够通过BatchCallDelegation合约批量执行交易，
               大大提高交易效率并节省gas费用。
             </p>
             <button
@@ -202,7 +277,7 @@ export const Delegation = () => {
               解绑代理
             </h3>
             <p style={{ fontSize: '0.875rem', color: '#555', lineHeight: '1.6', marginBottom: '1.5rem' }}>
-              解绑后，sponsor账户将恢复为普通EOA账户，无法再使用批量交易功能。
+              解绑后，您的账户将恢复为普通EOA账户，无法再使用批量交易功能。
               您可以随时重新绑定。
             </p>
             <button
@@ -252,6 +327,11 @@ export const Delegation = () => {
             wordBreak: 'break-all'
           }}>
             <strong>成功：</strong> {success}
+            {txHash && chain && (
+              <a href={`${chain.explorerUrl}/tx/${txHash}`} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '0.5rem' }}>
+                交易hash: {txHash}
+              </a>
+            )}
           </div>
         )}
 

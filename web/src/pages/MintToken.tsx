@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useWallet } from '../hooks/useWallet'
 import { Card } from '../components/Card'
-import { CONFIG } from '../config'
+import { CONFIG, getChainById } from '../config'
 import { createPrivateKeyWalletClient, createCustomPublicClient } from '../utils/web3'
 import { parseEther, formatEther } from 'viem'
 import { ERC20Abi } from '../utils/abi'
@@ -13,6 +13,7 @@ export const MintToken = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [txHash, setTxHash] = useState('')
   const [balance, setBalance] = useState<string>('')
 
   /**
@@ -22,6 +23,7 @@ export const MintToken = () => {
     e.preventDefault()
     setError('')
     setSuccess('')
+    setTxHash('')
     setLoading(true)
 
     try {
@@ -47,16 +49,17 @@ export const MintToken = () => {
       console.log('数量:', amount)
 
       // 调用ERC20的mint函数
-      const txHash = await walletClient.writeContract({
+      const hash = await walletClient.writeContract({
         address: CONFIG.ERC20_TOKEN_ADDRESS,
         abi: ERC20Abi,
         functionName: 'mint',
         args: [recipient, parseEther(amount)],
       })
 
-      console.log('Mint交易已发送:', txHash)
+      console.log('Mint交易已发送:', hash)
 
-      setSuccess(`Mint成功！交易哈希: ${txHash}`)
+      setSuccess(`Mint成功！`)
+      setTxHash(hash)
 
       // 清空表单
       setAmount('')
@@ -97,6 +100,8 @@ export const MintToken = () => {
       console.error('查询余额失败:', err)
     }
   }
+
+  const chain = getChainById(chainId)
 
   return (
     <div>
@@ -220,6 +225,11 @@ export const MintToken = () => {
               wordBreak: 'break-all'
             }}>
               <strong>成功：</strong> {success}
+              {txHash && chain && (
+                <a href={`${chain.explorerUrl}/tx/${txHash}`} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '1rem' }}>
+                  查看交易
+                </a>
+              )}
             </div>
           )}
 

@@ -8,8 +8,8 @@ import {
 } from 'ethers'
 import { createPublicClient, createWalletClient, http } from 'viem'
 import { Address, privateKeyToAccount } from 'viem/accounts'
-import { sepolia } from 'viem/chains'
 import { eip7702Actions } from 'viem/experimental'
+import { createCustomChain } from './chain'
 
 /**
  * 延迟函数
@@ -106,10 +106,11 @@ export const sendAuthorizationTransaction = async (
   try {
     // 创建 viem 账户（从私钥）
     const account = privateKeyToAccount(privateKey as `0x${string}`)
+    const chain = createCustomChain(chainId, rpcUrl);
 
     // 创建 public client 获取 nonce
     const publicClient = createPublicClient({
-      chain: sepolia,
+      chain: chain,
       transport: http(rpcUrl),
     })
 
@@ -121,7 +122,7 @@ export const sendAuthorizationTransaction = async (
     // 创建 wallet client
     const walletClient = createWalletClient({
       account,
-      chain: sepolia,
+      chain: chain,
       transport: http(rpcUrl),
     }).extend(eip7702Actions)
 
@@ -323,6 +324,20 @@ export const getChainId = async (rpcUrl: string): Promise<number> => {
     throw error
   }
 }
+
+/**
+ * 获取原生代币余额
+ */
+export const getNativeBalance = async (address: string, rpcUrl: string): Promise<string> => {
+  try {
+    const provider = new JsonRpcProvider(rpcUrl);
+    const balance = await provider.getBalance(address);
+    return ethersFormatEther(balance);
+  } catch (error) {
+    console.error('获取原生代币余额失败:', error);
+    throw error;
+  }
+};
 
 // 导出 ethers 的工具函数
 export { ethersParseEther as parseEther, ethersFormatEther as formatEther }

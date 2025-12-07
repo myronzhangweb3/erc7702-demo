@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode } from 'react'
 import { WalletState } from '../types'
-import { CONFIG } from '../config'
+import { CONFIG, CHAINS, getChainById } from '../config'
 import { checkDelegationStatus, getChainId } from '../utils/ethers-web3'
 import { privateKeyToAccount } from 'viem/accounts'
 
@@ -8,6 +8,8 @@ interface WalletContextType extends WalletState {
   connectWallet: (privateKey: string, rpcUrl: string) => Promise<void>
   disconnect: () => void
   updateDelegationStatus: () => Promise<void>
+  setGasFeePayer: (address: `0x${string}` | null) => void;
+  switchChain: (chainId: number) => void;
   privateKey: string | null
 }
 
@@ -16,7 +18,7 @@ const WalletContext = createContext<WalletContextType | undefined>(undefined)
 export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [walletState, setWalletState] = useState<WalletState>({
     txAccount: null,
-    sponsor: null,
+    gasFeePayer: null,
     isConnected: false,
     isDelegated: false,
     rpcUrl: CONFIG.DEFAULT_RPC_URL,
@@ -45,7 +47,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       setPrivateKey(privateKey)
       setWalletState({
         txAccount: accountAddress,
-        sponsor: accountAddress, // 使用同一个账户作为 sponsor
+        gasFeePayer: null,
         isConnected: true,
         isDelegated,
         rpcUrl,
@@ -64,7 +66,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     setPrivateKey(null)
     setWalletState({
       txAccount: null,
-      sponsor: null,
+      gasFeePayer: null,
       isConnected: false,
       isDelegated: false,
       rpcUrl: CONFIG.DEFAULT_RPC_URL,
@@ -76,10 +78,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
    * 更新绑定状态
    */
   const updateDelegationStatus = async () => {
-    if (!walletState.sponsor || !walletState.isConnected) return
+    if (!walletState.txAccount || !walletState.isConnected) return
 
     try {
-      const isDelegated = await checkDelegationStatus(walletState.sponsor, walletState.rpcUrl)
+      const isDelegated = await checkDelegationStatus(walletState.txAccount, walletState.rpcUrl)
 
       setWalletState((prev) => ({
         ...prev,
@@ -90,6 +92,23 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  const setGasFeePayer = (address: `0x${string}` | null) => {
+    setWalletState(prev => ({ ...prev, gasFeePayer: address }));
+  };
+
+  const switchChain = async (chainId: number) => {
+    const chain = getChainById(chainId);
+    if (chain) {
+      const isDelegated = walletState.txAccount ? await checkDelegationStatus(walletState.txAccount, chain.rpcUrl) : false;
+      setWalletState(prev => ({
+        ...prev,
+        chainId: chain.chainId,
+        rpcUrl: chain.rpcUrl,
+        isDelegated
+      }));
+    }
+  };
+
   return (
     <WalletContext.Provider
       value={{
@@ -97,6 +116,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         connectWallet,
         disconnect,
         updateDelegationStatus,
+        setGasFeePayer,
+        switchChain,
         privateKey,
       }}
     >

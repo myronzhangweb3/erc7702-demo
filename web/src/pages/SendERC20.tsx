@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useWallet } from '../hooks/useWallet'
 import { Card } from '../components/Card'
-import { CONFIG } from '../config'
-import { createPrivateKeyWalletClient } from '../utils/web3'
-import { parseEther, encodeFunctionData } from 'viem'
+import { CONFIG, getChainById } from '../config'
+import { createPrivateKeyWalletClient, getErc20Balance } from '../utils/web3'
+import { parseEther, encodeFunctionData, isAddress } from 'viem'
 import { ERC20Abi, BatchCallDelegationAbi } from '../utils/abi'
 
 interface TransferItem {
@@ -12,12 +12,27 @@ interface TransferItem {
 }
 
 export const SendERC20 = () => {
-  const { txAccount, sponsor, isDelegated, rpcUrl, chainId, updateDelegationStatus, privateKey } = useWallet()
+  const { txAccount, isDelegated, rpcUrl, chainId, updateDelegationStatus, privateKey } = useWallet()
   const [tokenAddress, setTokenAddress] = useState(CONFIG.ERC20_TOKEN_ADDRESS)
   const [transfers, setTransfers] = useState<TransferItem[]>([{ to: '', amount: '' }])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [txHashes, setTxHashes] = useState<string[]>([])
+  const [balance, setBalance] = useState('')
+
+  const checkBalance = async () => {
+    if (txAccount && isAddress(tokenAddress)) {
+      const bal = await getErc20Balance(tokenAddress, txAccount, chainId, rpcUrl);
+      setBalance(bal);
+    }
+  };
+
+  useEffect(() => {
+    checkBalance();
+    const interval = setInterval(checkBalance, 5000);
+    return () => clearInterval(interval);
+  }, [txAccount, rpcUrl, chainId, tokenAddress]);
 
   /**
    * 添加转账项
@@ -49,6 +64,7 @@ export const SendERC20 = () => {
     e.preventDefault()
     setError('')
     setSuccess('')
+    setTxHashes([])
     setLoading(true)
 
     try {
@@ -78,7 +94,7 @@ export const SendERC20 = () => {
    * 使用代理合约批量发送ERC20
    */
   const sendWithDelegation = async () => {
-    if (!txAccount || !sponsor) {
+    if (!txAccount) {
       throw new Error('未登录')
     }
 
@@ -105,18 +121,19 @@ export const SendERC20 = () => {
     const walletClient = createPrivateKeyWalletClient(privateKey, chainId, rpcUrl)
 
     // 调用 execute 函数
-    const txHash = await walletClient.writeContract({
-      address: sponsor, // 发送到自己（已代理的账户）
+    const hash = await walletClient.writeContract({
+      address: txAccount, // 发送到自己（已代理的账户）
       abi: BatchCallDelegationAbi,
       functionName: 'execute',
       args: [calls],
     })
 
-    console.log('批量转账交易已发送:', txHash)
+    console.log('批量转账交易已发送:', hash)
 
     setSuccess(
-      `批量转账成功！共发送${transfers.length}笔交易。\n交易哈希: ${txHash}`
+      `批量转账成功！共发送${transfers.length}笔交易。`
     )
+    setTxHashes([hash])
 
     // 清空表单
     setTransfers([{ to: '', amount: '' }])
@@ -139,7 +156,7 @@ export const SendERC20 = () => {
 
     console.log('使用普通方式逐笔发送ERC20...')
 
-    const txHashes: string[] = []
+    const hashes: string[] = []
 
     // 逐笔发送
     for (let i = 0; i < transfers.length; i++) {
@@ -154,20 +171,56 @@ export const SendERC20 = () => {
       })
 
       console.log(`第${i + 1}笔转账已发送:`, txHash)
-      txHashes.push(txHash)
+      hashes.push(txHash)
     }
 
     setSuccess(
-      `转账成功！共发送${transfers.length}笔交易。\n交易哈希:\n${txHashes.join('\n')}`
+      `转账成功！共发送${transfers.length}笔交易。`
     )
+    setTxHashes(hashes)
 
     // 清空表单
     setTransfers([{ to: '', amount: '' }])
   }
 
+  const chain = getChainById(chainId)
+
   return (
     <div>
       <Card title="发送 ERC20 Token">
+        {/* 余额显示 */}
+        <div style={{
+          padding: '1rem',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '8px',
+          marginBottom: '2rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div>
+            <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.25rem' }}>
+              当前余额
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#333' }}>
+              {balance ? `${balance} Tokens` : '加载中...'}
+            </div>
+          </div>
+          <button
+            onClick={checkBalance}
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: '#007bff',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '0.875rem'
+            }}
+          >
+            刷新余额
+          </button>
+        </div>
         {/* 绑定状态提示 */}
         <div style={{
           padding: '1rem',
@@ -182,12 +235,12 @@ export const SendERC20 = () => {
           <div style={{ fontSize: '0.875rem', color: '#555', lineHeight: '1.6' }}>
             {isDelegated ? (
               <>
-                您的sponsor账户已绑定代理，将使用BatchCallDelegation合约批量发送，
+                您的账户已绑定代理，将使用BatchCallDelegation合约批量发送，
                 可以在一笔交易中完成多笔转账，节省gas费用。
               </>
             ) : (
               <>
-                您的sponsor账户未绑定代理，将使用普通ERC20转账方式逐笔发送。
+                您的账户未绑定代理，将使用普通ERC20转账方式逐笔发送。
                 建议先在<a href="/delegation" style={{ color: '#856404', fontWeight: 'bold' }}>代理管理页面</a>绑定代理以启用批量发送功能。
               </>
             )}
@@ -343,6 +396,17 @@ export const SendERC20 = () => {
               wordBreak: 'break-all'
             }}>
               <strong>成功：</strong> {success}
+              {txHashes.length > 0 && chain && (
+                <div>
+                  {txHashes.map((hash, index) => (
+                    <div key={index}>
+                      <a href={`${chain.explorerUrl}/tx/${hash}`} target="_blank" rel="noopener noreferrer">
+                        查看交易 {index + 1}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -403,7 +467,7 @@ export const SendERC20 = () => {
               </tr>
               <tr>
                 <td style={{ paddingTop: '0.5rem' }}>支付者</td>
-                <td style={{ paddingTop: '0.5rem' }}>Sponsor</td>
+                <td style={{ paddingTop: '0.5rem' }}>TxAccount</td>
                 <td style={{ paddingTop: '0.5rem' }}>TxAccount</td>
               </tr>
             </tbody>

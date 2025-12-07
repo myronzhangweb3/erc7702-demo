@@ -1,13 +1,18 @@
 import { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useWallet } from '../hooks/useWallet'
+import { CHAINS } from '../config'
 
 interface LayoutProps {
   children: ReactNode
 }
 
 export const Layout = ({ children }: LayoutProps) => {
-  const { isConnected, txAccount, isDelegated, disconnect } = useWallet()
+  const { isConnected, txAccount, isDelegated, disconnect, gasFeePayer, switchChain, chainId } = useWallet()
+
+  const handleChainChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    switchChain(Number(event.target.value))
+  }
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
@@ -26,7 +31,7 @@ export const Layout = ({ children }: LayoutProps) => {
           alignItems: 'center'
         }}>
           <h1 style={{ margin: 0, fontSize: '1.5rem', color: '#333' }}>
-            ERC7702 Demo
+            ERC7702 Demo {gasFeePayer && `- Gas Fee Payer: ${gasFeePayer.slice(0, 6)}...${gasFeePayer.slice(-4)}`}
           </h1>
 
           {isConnected && (
@@ -66,6 +71,24 @@ export const Layout = ({ children }: LayoutProps) => {
                 }}>
                   {txAccount ? `${txAccount.slice(0, 6)}...${txAccount.slice(-4)}` : ''}
                 </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '0.25rem' }}>
+                  Chain
+                </div>
+                <select value={chainId} onChange={handleChainChange} style={{
+                  fontSize: '0.875rem',
+                  fontFamily: 'monospace',
+                  color: '#333',
+                  fontWeight: 'bold',
+                  borderRadius: '4px',
+                  border: '1px solid #ced4da',
+                }}>
+                  {Object.values(CHAINS).map(chain => (
+                    <option key={chain.chainId} value={chain.chainId}>{chain.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div style={{
