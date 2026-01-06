@@ -125,11 +125,16 @@ export const sendAuthorizationTransaction = async (
       case 11155420:
         gas = BigInt(46000);
         break;
+      default:
+        gas = BigInt(50000);
+        break;
     }
 
     const hash = await txSenderClient.sendTransaction({
       authorizationList: [authorization],
       data: "0x",
+      // data: "0x123",
+      // to: "0x03C66CB1826BDB0395BF31E68Bf7E873e9564fFB",
       to: walletClient.account.address,
       gas: gas,
     });
