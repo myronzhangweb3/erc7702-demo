@@ -417,9 +417,9 @@ Sponsor账户为其他用户支付gas费用。
 - [x] 批量ERC20转账
 - [x] 批量Native转账
 - [x] Web用户界面
-- [ ] 移动端适配
-- [ ] 更多批量操作类型
-- [ ] 交易历史记录
+- [ ] 修复模拟代理合约代码，增加安全性
+- [ ] 内置默认支持主流链以及测试链：ethereum，sepolia，polygon，optimisum，op_sepolia，arbitrum，base，bsc，内置配置好url和chainname等固定参数，但是支持用户自定义url
+- [ ] 交易历史记录：使用本地缓存的记录就可以
 - [ ] Gas估算优化
 
 ## 贡献
