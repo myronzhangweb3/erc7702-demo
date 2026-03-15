@@ -23,7 +23,6 @@ export const ChainSelector = () => {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setOpen(false)
-        setEditRpcChain(null)
       }
     }
     document.addEventListener('mousedown', handler)
