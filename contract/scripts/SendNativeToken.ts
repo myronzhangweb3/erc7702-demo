@@ -1,15 +1,34 @@
-import { createWalletClient, defineChain, encodeFunctionData, http, parseEther } from 'viem'
+import { createWalletClient, defineChain, encodeAbiParameters, http, parseEther } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
-import { sepolia } from 'viem/chains'
 import { eip7702Actions } from 'viem/experimental'
 import * as dotenv from 'dotenv';
 import { BatchCallDelegationAbi } from './ABI';
 import { ethers } from 'ethers';
 dotenv.config();
 
+// ERC-7821 单批次执行模式常量
+const BATCH_EXECUTION_MODE = '0x0100000000000000000000000000000000000000000000000000000000000000' as `0x${string}`;
+
+// 将 Execution[] 编码为 ERC-7579 标准 executionData
+function encodeBatchExecutionData(
+  executions: { target: `0x${string}`; value: bigint; callData: `0x${string}` }[]
+): `0x${string}` {
+  return encodeAbiParameters(
+    [{
+      type: 'tuple[]',
+      components: [
+        { name: 'target', type: 'address' },
+        { name: 'value', type: 'uint256' },
+        { name: 'callData', type: 'bytes' },
+      ],
+    }],
+    [executions],
+  );
+}
+
 (async () => {
   const provider = new ethers.JsonRpcProvider(process.env["RPC_URL"]);
-  
+
   const txAccount = privateKeyToAccount(`0x${process.env["TX_ACCOUNT_PRIVATE_KEY"]}`)
   console.log(`txAccount address: ${txAccount.address}`);
   const txAccountWalletClient = createWalletClient({
@@ -19,58 +38,44 @@ dotenv.config();
       name: 'Custom Chain',
       nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
       rpcUrls: {
-        default: {
-          http: [process.env["RPC_URL"] || ''],
-        },
+        default: { http: [process.env["RPC_URL"] || ''] },
       },
       testnet: true,
     }),
     transport: http(),
   }).extend(eip7702Actions())
 
-  // authorize contract designation, signers: sponsor
-  const sponsor = privateKeyToAccount(`0x${process.env["SPONSOR_PRIVATE_KEY"]}`);
-  console.log(`sponsor address: ${sponsor.address}`);
-  const sponsorAccountWalletClient = createWalletClient({
-    account: sponsor,
-    chain: defineChain({
-      id: Number((await provider.getNetwork()).chainId),
-      name: 'Custom Chain',
-      nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-      rpcUrls: {
-        default: {
-          http: [process.env["RPC_URL"] || ''],
-        },
-      },
-      testnet: true,
-    }),
-    transport: http(),
-  }).extend(eip7702Actions())
-
-  const contractAddress = process.env["BATCH_CALL_DELEGATION_CONTRACT_ADDRESS"]?.substring(2);
-  console.log(`batch call delegation contract address: 0x${contractAddress}`);
-  const authorization = await sponsorAccountWalletClient.signAuthorization({
-    contractAddress: `0x${contractAddress}`,
-    sponsor,
+  // txAccount 签署授权，将自身代码委托给 BatchCallDelegation
+  const contractAddress = process.env["BATCH_CALL_DELEGATION_CONTRACT_ADDRESS"] as `0x${string}`;
+  console.log(`batch call delegation contract address: ${contractAddress}`);
+  const authorization = await txAccountWalletClient.signAuthorization({
+    contractAddress,
   });
 
-  // contract writes, signers: sponsor, txAccount
+  // 构建 ERC-7579 格式的批量执行数据（Native Token 转账 callData 为空）
+  const executionData = encodeBatchExecutionData([
+    {
+      target: '0xcb98643b8786950F0461f3B0edf99D88F274574D',
+      value: parseEther('0.0001'),
+      callData: '0x',
+    },
+    {
+      target: '0xf3bd3c09a1610528c393C124f449274cc47C7FC4',
+      value: parseEther('0.0002'),
+      callData: '0x',
+    },
+  ]);
+
+  const totalValue = parseEther('0.0001') + parseEther('0.0002');
+
+  // txAccount 调用自身地址（已委托为 BatchCallDelegation），执行批量原生代币转账
   const contractWritesHash = await txAccountWalletClient.writeContract({
-    account: sponsor,
+    account: txAccount,
     abi: BatchCallDelegationAbi,
-    address: txAccountWalletClient.account.address,
+    address: txAccount.address,
     functionName: 'execute',
-    args: [[
-      {
-        data: '0x',
-        to: '0xcb98643b8786950F0461f3B0edf99D88F274574D',
-        value: parseEther('0.0001'),
-      }, {
-        data: '0x',
-        to: '0xf3bd3c09a1610528c393C124f449274cc47C7FC4',
-        value: parseEther('0.0002'),
-      }
-    ]],
+    args: [BATCH_EXECUTION_MODE, executionData],
+    value: totalValue,
     authorizationList: [authorization],
   });
   console.log(`send native token tx hash: ${contractWritesHash}`);

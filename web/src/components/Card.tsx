@@ -6,25 +6,24 @@ interface CardProps {
   style?: CSSProperties
 }
 
-export const Card = ({ title, children, style }: CardProps) => {
-  return (
-    <div style={{
-      backgroundColor: '#fff',
-      borderRadius: '8px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-      padding: '2rem',
-      ...style
+export const Card = ({ title, children, style }: CardProps) => (
+  <div style={{
+    backgroundColor: '#fff',
+    borderRadius: '10px',
+    border: '1px solid #f0f0f0',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+    padding: '1.5rem',
+    ...style,
+  }}>
+    <h2 style={{
+      margin: '0 0 1.25rem 0',
+      fontSize: '1rem',
+      fontWeight: 600,
+      color: '#111',
+      letterSpacing: '-0.01em',
     }}>
-      <h2 style={{
-        margin: '0 0 1.5rem 0',
-        fontSize: '1.5rem',
-        color: '#333',
-        borderBottom: '2px solid #007bff',
-        paddingBottom: '0.5rem'
-      }}>
-        {title}
-      </h2>
-      {children}
-    </div>
-  )
-}
+      {title}
+    </h2>
+    {children}
+  </div>
+)

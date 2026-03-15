@@ -1,33 +1,47 @@
-// BatchCallDelegation合约ABI
+// BatchCallDelegation合约ABI (ERC-7821 + Gas代付签名)
 export const BatchCallDelegationAbi = [
   {
     "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "bytes",
-            "name": "data",
-            "type": "bytes"
-          },
-          {
-            "internalType": "address",
-            "name": "to",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "value",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct BatchCallDelegation.Call[]",
-        "name": "calls",
-        "type": "tuple[]"
-      }
+      { "internalType": "bytes32", "name": "mode", "type": "bytes32" },
+      { "internalType": "bytes", "name": "executionData", "type": "bytes" }
     ],
     "name": "execute",
     "outputs": [],
     "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "mode", "type": "bytes32" },
+      { "internalType": "bytes", "name": "executionData", "type": "bytes" },
+      { "internalType": "bytes", "name": "signature", "type": "bytes" }
+    ],
+    "name": "executeWithSig",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "nonce",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "mode", "type": "bytes32" }
+    ],
+    "name": "supportsExecutionMode",
+    "outputs": [{ "internalType": "bool", "name": "result", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "BATCH_EXECUTION_MODE",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "stateMutability": "view",
     "type": "function"
   },
   {
