@@ -27,9 +27,9 @@ interface WalletContextType extends WalletState {
 
   // Multi-wallet management
   storedWallets: StoredWallet[]
-  unlockWallets: (password: string) => Promise<boolean>
+  unlockWallets: (password: string) => Promise<CryptoKey | null>
   addWallet: (name: string, privateKey: string, password?: string) => Promise<void>
-  selectWallet: (walletId: string) => Promise<void>
+  selectWallet: (walletId: string, keyOverride?: CryptoKey) => Promise<void>
   removeWallet: (walletId: string) => void
 
   // Gas payer
@@ -94,15 +94,15 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
   // ── Wallet unlock ─────────────────────────────────────────────────────────
 
-  const unlockWallets = async (password: string): Promise<boolean> => {
+  const unlockWallets = async (password: string): Promise<CryptoKey | null> => {
     const salt = getPasswordSalt()
     const storedHash = getPasswordHash()
-    if (!salt || !storedHash) return false
+    if (!salt || !storedHash) return null
 
     try {
       const key = await deriveKey(password, salt)
       const hash = await hashPassword(password, salt)
-      if (hash !== storedHash) return false
+      if (hash !== storedHash) return null
 
       setCryptoKey(key)
       setWalletState(prev => ({ ...prev, isUnlocked: true }))
@@ -118,9 +118,9 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
           // Gas payer decryption failed — ignore, non-critical
         }
       }
-      return true
+      return key
     } catch {
-      return false
+      return null
     }
   }
 
@@ -178,11 +178,12 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     }))
   }
 
-  const selectWallet = async (walletId: string) => {
-    if (!cryptoKey) throw new Error('钱包未解锁')
+  const selectWallet = async (walletId: string, keyOverride?: CryptoKey) => {
+    const key = keyOverride ?? cryptoKey
+    if (!key) throw new Error('钱包未解锁')
     const wallet = getStoredWallets().find(w => w.id === walletId)
     if (!wallet) throw new Error('钱包不存在')
-    const privateKey = await decryptPrivateKey(wallet.encryptedKey, wallet.iv, cryptoKey) as Hex
+    const privateKey = await decryptPrivateKey(wallet.encryptedKey, wallet.iv, key) as Hex
     await _selectWalletWithKey(wallet, privateKey)
   }
 

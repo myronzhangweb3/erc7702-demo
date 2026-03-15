@@ -38,11 +38,11 @@ export const Home = () => {
     setUnlockError('')
     setUnlockLoading(true)
     try {
-      const ok = await unlockWallets(password)
-      if (!ok) { setUnlockError('密码错误，请重试'); return }
-      // Auto-select first stored wallet
+      const key = await unlockWallets(password)
+      if (!key) { setUnlockError('密码错误，请重试'); return }
+      // Auto-select first stored wallet, passing key directly to avoid stale state
       if (storedWallets.length > 0) {
-        await selectWallet(storedWallets[0].id)
+        await selectWallet(storedWallets[0].id, key)
       }
       navigate('/delegation')
     } catch (err) {
